@@ -78,7 +78,7 @@ public class EchoServer extends AbstractServer
    * @param client the connection connected to the client.
    */
   public void clientConnected(ConnectionToClient client) {
-	  System.out.println("");
+	  System.out.println("" + client + " has connected");
   }
 
   /**
@@ -89,7 +89,9 @@ public class EchoServer extends AbstractServer
    * @param client the connection with the client.
    */
   public void clientDisconnected(
-    ConnectionToClient client) {}
+    ConnectionToClient client) {
+	  System.out.println("" + client + " has disconnected");
+  }
 
   /**
    * Hook method called each time an exception is thrown in a
@@ -122,7 +124,7 @@ public class EchoServer extends AbstractServer
     }
     catch(Throwable t)
     {
-      port = DEFAULT_PORT; //Set port to 5555
+      port = DEFAULT_PORT; //Set port to 5432
     }
 	
     EchoServer sv = new EchoServer(port);
