@@ -48,6 +48,7 @@ public class EchoServer extends AbstractServer
   public void handleMessageFromClient
     (Object msg, ConnectionToClient client)
   {
+	  //if #login & client.getLogin=null : store  else error
     System.out.println("Message received: " + msg + " from " + client);
     this.sendToAllClients(msg);
   }
@@ -78,6 +79,7 @@ public class EchoServer extends AbstractServer
    * @param client the connection connected to the client.
    */
   public void clientConnected(ConnectionToClient client) {
+	  //client.setInfo(LoginID, 
 	  System.out.println("" + client + " has connected");
   }
 
