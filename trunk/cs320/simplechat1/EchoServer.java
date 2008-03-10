@@ -103,7 +103,10 @@ public class EchoServer extends AbstractServer
    * @param Throwable the exception thrown.
    */
   public void clientException(
-    ConnectionToClient client, Throwable exception) {}
+    ConnectionToClient client, Throwable exception) {
+	    System.out.println("" + client + " has disconnected due to" +
+	    " exception: " + exception);
+  }
   
   //Class methods ***************************************************
   
