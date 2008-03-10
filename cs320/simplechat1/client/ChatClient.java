@@ -68,7 +68,8 @@ public class ChatClient extends AbstractClient
 	{
 		//if first char of message is # then call method
 		//else do this crap
-		clientUI.display("" + message.charAt(0));
+		if(message.charAt(0) == '#')
+			clientCommand("" + message.charAt(0));
 		try
 		{
 			sendToServer(message);
@@ -93,6 +94,15 @@ public class ChatClient extends AbstractClient
 		catch(IOException e) {}
 		System.exit(0);
 	}
+	public void clientCommand(String command){
+		clientUI.display("command");
+		if(command.equalsIgnoreCase("#quit"))
+			clientUI.display("QUITTING");
+		else;
+		
+		
+	}
+	
 	public void connectionClosed() {
 		clientUI.display("connectionClosed.");
 	}
