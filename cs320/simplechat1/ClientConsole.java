@@ -109,9 +109,10 @@ public class ClientConsole implements ChatIF
     int port = 0;  //The port number
 
     if(args.length < 1){
-	System.out.println("You must specify a login ID, duchebag!");
+	System.out.println("You must specify a login ID!");
 	System.exit(0);
     }
+    loginID = args[0];
     
     try
     {
