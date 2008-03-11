@@ -51,13 +51,14 @@ public class EchoServer extends AbstractServer
     String tempMsg = msg.toString();
     if(tempMsg.startsWith("#login ")){
 	  String username = tempMsg.substring(7);
-	  client.setInfo("login id", username);
+	  client.setInfo("loginid", username);
+	  System.out.println(client.getInfo("loginid"));
     
     
     }
 	  
 	  //if #login & client.getLogin=null : store  else error
-    System.out.println("Message received: " + msg + " from " + client);
+    System.out.println("Message received: " + msg + " from " + client.getInfo("loginid"));
     this.sendToAllClients(msg);
     
   }
