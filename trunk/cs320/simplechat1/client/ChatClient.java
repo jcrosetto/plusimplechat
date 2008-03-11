@@ -37,13 +37,16 @@ public class ChatClient extends AbstractClient
 	* @param port The port number to connect on.
 	* @param clientUI The interface type variable.
 	*/
-	
+	////////////////////////////////
+	////////////////////////////////
+	//////loginid
 	public ChatClient(String loginID, String host, int port, ChatIF clientUI) 
 	throws IOException 
 	{
 		super(host, port); //Call the superclass constructor
 		this.clientUI = clientUI;
 		openConnection();
+		sendToServer("#login " + loginID);
 	}
 	
 	
@@ -69,16 +72,21 @@ public class ChatClient extends AbstractClient
 		//if first char of message is # then call method
 		//else do this crap
 		if(message.charAt(0) == '#')
-			clientCommand("" + message.charAt(0));
-		try
-		{
-			sendToServer(message);
+			clientCommand(message);
+		else if(isConnected()){
+			try
+			{
+				sendToServer(message);
+			}
+			catch(IOException e)
+			{
+				clientUI.display
+				("Could not send message to server.  Terminating client.");
+				quit();
+			}
 		}
-		catch(IOException e)
-		{
-			clientUI.display
-			("Could not send message to server.  Terminating client.");
-			quit();
+		else{
+			clientUI.display("Not connected to server");	
 		}
 	}
 	
@@ -95,13 +103,65 @@ public class ChatClient extends AbstractClient
 		System.exit(0);
 	}
 	public void clientCommand(String command){
-		clientUI.display("command");
-		if(command.equalsIgnoreCase("#quit"))
+		if(command.equalsIgnoreCase("#quit")){
 			clientUI.display("QUITTING");
-		else;
+			quit();
+		}
+		else if(command.equalsIgnoreCase("#logoff")){
+			clientUI.display("LOGOFF");
+			try
+			{
+				closeConnection();
+			}
+			catch(IOException e) {}
+		}
+		else if(command.equalsIgnoreCase("#login")){
+			if(isConnected()){
+				clientUI.display("Already logged in");
+			}
+			else{
+				clientUI.display("logging in");
+				try
+				{
+					openConnection();
+				}
+				catch(IOException e) {}
+			}
+		}
+		else if(command.equalsIgnoreCase("#gethost"))
+			clientUI.display("" + getHost());
+		else if(command.equalsIgnoreCase("#getport"))
+			clientUI.display("" + getPort());
 		
+		else if(command.startsWith("#sethost ")){
+			if(isConnected()){
+				clientUI.display("You must be logged off to do that");
+			}
+			else{
+				String tempHost = command.substring(9, command.length());
+				setHost(tempHost);
+				clientUI.display("Host set to " + tempHost);
+			}
+		}
+		else if(command.startsWith("#setport ")){
+			if(isConnected()){
+				clientUI.display("You must be logged off to do that");
+			}
+			else{
+				//should check if port is a number
+				String tempPort = command.substring(9, command.length());
+				setPort(Integer.parseInt(tempPort));
+				clientUI.display("Port set to " + tempPort);
+			}
+		}
+		else{
+			clientUI.display("Invalid command");
+		}
 		
 	}
+	
+	
+	
 	
 	public void connectionClosed() {
 		clientUI.display("connectionClosed.");
