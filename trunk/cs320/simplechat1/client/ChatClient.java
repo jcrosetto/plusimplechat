@@ -108,11 +108,9 @@ public class ChatClient extends AbstractClient
 	}
 	public void clientCommand(String command){
 		if(command.equalsIgnoreCase("#quit")){
-			clientUI.display("QUITTING");
 			quit();
 		}
 		else if(command.equalsIgnoreCase("#logoff")){
-			clientUI.display("LOGOFF");
 			try
 			{
 				closeConnection();
@@ -169,14 +167,14 @@ public class ChatClient extends AbstractClient
 	
 	
 	public void connectionClosed() {
-		clientUI.display("connectionClosed.");
+		clientUI.display("Connection to " + getHost() + " closed.");
 	}
 	public void connectionException(Exception exception) {
-		clientUI.display("connectionExc.." + exception + " QUITTING!!!!");
+		clientUI.display("Connection to " + getHost() + " lost.");
 		quit();
 	}
 	public void connectionEstablished() {
-		clientUI.display("connectionEstablished.");
+		clientUI.display("Welcome! You are connected to "+ getHost());
 	}
 }
 //End of ChatClient class
