@@ -36,7 +36,7 @@ public class ServerConsole implements ChatIF
    */
   public ServerConsole(int port) 
   {
-    server= new EchoServer(port);
+    server= new EchoServer(port, this);
     try 
     {
       server.listen();
@@ -65,9 +65,9 @@ public class ServerConsole implements ChatIF
       while (true) 
       {
         message = fromConsole.readLine();
-        //server.handleMessageFromClientUI(message);
-	display(message);
-	server.sendToAllClients("SERVER MSG> " + message);
+        server.handleMessageFromServerUI(message);
+	//display(message);
+	//server.sendToAllClients("SERVER MSG> " + message);
       }
     } 
     catch (Exception ex) 
@@ -88,6 +88,7 @@ public class ServerConsole implements ChatIF
     System.out.println("SERVER MSG> " + message);
   }
   
+
   //Class methods ***************************************************
 	
 	/**
