@@ -177,6 +177,7 @@ public class EchoServer extends AbstractServer
 				serverUI.display("Server is already stopped");
 			else{
 				stopListening();
+				sendToAllClients("Server has stopped listening for connections.");
 			}
 		}
 		else if(command.equalsIgnoreCase("#close")){
