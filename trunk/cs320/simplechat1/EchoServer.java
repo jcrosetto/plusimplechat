@@ -4,6 +4,7 @@
 
 import java.io.*;
 import ocsf.server.*;
+import common.*;
 
 /**
 * This class overrides some of the methods in the abstract 
@@ -24,6 +25,17 @@ public class EchoServer extends AbstractServer
 	*/
 	final public static int DEFAULT_PORT = 5432;
 	
+	/**
+	* The interface type variable.  It allows the implementation of 
+	* the display method in the server.
+	*/
+	private ChatIF serverUI;
+	
+	/**
+	* True if the server is closed.
+	*/
+	private boolean isClosed = false; 
+	
 	//Constructors ****************************************************
 	
 	/**
@@ -31,9 +43,10 @@ public class EchoServer extends AbstractServer
 	*
 	* @param port The port number to connect on.
 	*/
-	public EchoServer(int port) 
+	public EchoServer(int port, ChatIF serverUI) 
 	{
 		super(port);
+		this.serverUI = serverUI;
 	}
 	
 	
@@ -93,7 +106,7 @@ public class EchoServer extends AbstractServer
 	* @param client the connection connected to the client.
 	*/
 	public void clientConnected(ConnectionToClient client) {
-		//client.setInfo(LoginID, 
+		//Set user ID here 
 		System.out.println("" + client + " has connected");
 	}
 	
@@ -106,7 +119,7 @@ public class EchoServer extends AbstractServer
 	*/
 	public void clientDisconnected(
 	ConnectionToClient client) {
-		System.out.println("" + client + " has disconnected");
+		System.out.println(client.getInfo("loginid")+" has logged out");
 	}
 	
 	/**
@@ -120,42 +133,92 @@ public class EchoServer extends AbstractServer
 	*/
 	public void clientException(
 	ConnectionToClient client, Throwable exception) {
-		System.out.println("" + client + " has disconnected due to" +
+		System.out.println("" + client.getInfo("loginid") + " has disconnected due to" +
 		" exception: " + exception);
 	}
 	
-	//Class methods ***************************************************
-	
 	/**
-	* This method is responsible for the creation of 
-	* the server instance (there is no UI in this phase).
-	*
-	* @param args[0] The port number to listen on.  Defaults to 5555 
-	*          if no argument is entered.
+	* This method terminates the server.
 	*/
-	public static void main(String[] args) 
+	public void quit()
 	{
-		int port = 0; //Port to listen on
-		
 		try
 		{
-			port = Integer.parseInt(args[0]); //Get port from command line
+			close();
 		}
-		catch(Throwable t)
-		{
-			port = DEFAULT_PORT; //Set port to 5432
-		}
-		
-		EchoServer sv = new EchoServer(port);
-		
-		try 
-		{
-			sv.listen(); //Start listening for connections
-		} 
-		catch (Exception ex) 
-		{
-			System.out.println("ERROR - Could not listen for clients!");
+		catch(IOException e) {}
+		System.exit(0);
+	}
+	
+	/**
+	* This method handles all data coming from the UI            
+	*
+	* @param message The message from the UI.    
+	*/
+	public void handleMessageFromServerUI(String message)
+	{
+		//if first char of message is # then call method
+		//else do this crap
+		if(message.charAt(0) == '#')
+			serverCommand(message);
+		else{
+			serverUI.display(message);
+			sendToAllClients(message);
 		}
 	}
+	
+	public void serverCommand(String command){
+		if(command.equalsIgnoreCase("#quit")){
+			serverUI.display("QUITTING");
+			quit();
+		}
+		else if(command.equalsIgnoreCase("#stop")){
+			if(!isListening())
+				serverUI.display("Server is already stopped");
+			else{
+				stopListening();
+			}
+		}
+		else if(command.equalsIgnoreCase("#close")){
+			try
+			{
+				serverUI.display("CLOSING");
+				close();
+				isClosed = true;
+			}
+			catch(IOException e) {}
+		}
+		else if(command.startsWith("#setport ")){
+			if(!isClosed){
+				serverUI.display("The server must be closed" +
+					" to change the port");
+			}
+			else{
+				String tempPort = command.substring(9, command.length());
+				setPort(Integer.parseInt(tempPort));
+				serverUI.display("Port set to " + tempPort);
+			}
+		}
+		else if(command.startsWith("#start")){
+			if(isListening())
+				serverUI.display("Server is already running");
+			else{
+				try
+				{
+					listen();
+				}
+				catch(IOException e) {}
+				isClosed = false;
+			}
+		}
+		else if(command.equalsIgnoreCase("#getport")){
+			serverUI.display("The current port is " + getPort());
+		}
+		else{
+			serverUI.display("Invalid command");
+		}
+		
+	}
+
 }
 //End of EchoServer class

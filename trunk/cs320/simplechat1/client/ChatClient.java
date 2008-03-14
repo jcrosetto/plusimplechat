@@ -27,6 +27,8 @@ public class ChatClient extends AbstractClient
 	*/
 	ChatIF clientUI; 
 	
+	String loginID;
+	
 	
 	//Constructors ****************************************************
 	
@@ -46,7 +48,9 @@ public class ChatClient extends AbstractClient
 		super(host, port); //Call the superclass constructor
 		this.clientUI = clientUI;
 		openConnection();
+		//System.out.println("test " + getInetAddress());
 		sendToServer("#login " + loginID);
+		this.loginID = loginID;
 	}
 	
 	
@@ -124,6 +128,7 @@ public class ChatClient extends AbstractClient
 				try
 				{
 					openConnection();
+					sendToServer("#login " + loginID);
 				}
 				catch(IOException e) {}
 			}
