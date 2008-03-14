@@ -133,8 +133,7 @@ public class EchoServer extends AbstractServer
 	*/
 	public void clientException(
 	ConnectionToClient client, Throwable exception) {
-		System.out.println("" + client.getInfo("loginid") + " has disconnected due to" +
-		" exception: " + exception);
+		System.out.println(client.getInfo("loginid") + " has disconnected.");
 	}
 	
 	/**
