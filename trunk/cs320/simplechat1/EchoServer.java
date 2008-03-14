@@ -118,107 +118,107 @@ public class EchoServer extends AbstractServer
 	* @param client the connection with the client.
 	*/
 	public void clientDisconnected(
-	ConnectionToClient client) {
-		System.out.println(client.getInfo("loginid")+" has logged out");
-	}
-	
-	/**
-	* Hook method called each time an exception is thrown in a
-	* ConnectionToClient thread.
-	* The method may be overridden by subclasses but should remains
-	* synchronized.
-	*
-	* @param client the client that raised the exception.
-	* @param Throwable the exception thrown.
-	*/
-	public void clientException(
-	ConnectionToClient client, Throwable exception) {
-		System.out.println(client.getInfo("loginid") + " has disconnected.");
-	}
-	
-	/**
-	* This method terminates the server.
-	*/
-	public void quit()
-	{
-		try
-		{
-			close();
-		}
-		catch(IOException e) {}
-		System.exit(0);
-	}
-	
-	/**
-	* This method handles all data coming from the UI            
-	*
-	* @param message The message from the UI.    
-	*/
-	public void handleMessageFromServerUI(String message)
-	{
-		//if first char of message is # then call method
-		//else do this crap
-		if(message.charAt(0) == '#')
-			serverCommand(message);
-		else{
-			serverUI.display(message);
-			sendToAllClients(message);
-		}
-	}
-	
-	public void serverCommand(String command){
-		if(command.equalsIgnoreCase("#quit")){
-			serverUI.display("QUITTING");
-			quit();
-		}
-		else if(command.equalsIgnoreCase("#stop")){
-			if(!isListening())
-				serverUI.display("Server is already stopped");
-			else{
-				stopListening();
-				sendToAllClients("Server has stopped listening for connections.");
-			}
-		}
-		else if(command.equalsIgnoreCase("#close")){
-			try
-			{
-				serverUI.display("CLOSING");
-				close();
-				isClosed = true;
-			}
-			catch(IOException e) {}
-		}
-		else if(command.startsWith("#setport ")){
-			if(!isClosed){
-				serverUI.display("The server must be closed" +
-					" to change the port");
-			}
-			else{
-				String tempPort = command.substring(9, command.length());
-				setPort(Integer.parseInt(tempPort));
-				serverUI.display("Port set to " + tempPort);
-			}
-		}
-		else if(command.startsWith("#start")){
-			if(isListening())
-				serverUI.display("Server is already running");
-			else{
-				try
-				{
-					listen();
-				}
-				catch(IOException e) {}
-				isClosed = false;
-			}
-		}
-		else if(command.equalsIgnoreCase("#getport")){
-			serverUI.display("The current port is " + getPort());
-		}
-		else{
-			serverUI.display("Invalid command");
+		ConnectionToClient client) {
+	System.out.println(client.getInfo("loginid")+" has logged out");
 		}
 		
-	}
-
+		/**
+		* Hook method called each time an exception is thrown in a
+		* ConnectionToClient thread.
+		* The method may be overridden by subclasses but should remains
+		* synchronized.
+		*
+		* @param client the client that raised the exception.
+		* @param Throwable the exception thrown.
+		*/
+		public void clientException(
+			ConnectionToClient client, Throwable exception) {
+		System.out.println(client.getInfo("loginid") + " has disconnected.");
+			}
+			
+			/**
+			* This method terminates the server.
+			*/
+			public void quit()
+			{
+				try
+				{
+					close();
+				}
+				catch(IOException e) {}
+				System.exit(0);
+			}
+			
+			/**
+			* This method handles all data coming from the UI            
+			*
+			* @param message The message from the UI.    
+			*/
+			public void handleMessageFromServerUI(String message)
+			{
+				//if first char of message is # then call method
+				//else do this crap
+				if(message.charAt(0) == '#')
+					serverCommand(message);
+				else{
+					serverUI.display(message);
+					sendToAllClients(message);
+				}
+			}
+			
+			public void serverCommand(String command){
+				if(command.equalsIgnoreCase("#quit")){
+					serverUI.display("QUITTING");
+					quit();
+				}
+				else if(command.equalsIgnoreCase("#stop")){
+					if(!isListening())
+						serverUI.display("Server is already stopped");
+					else{
+						stopListening();
+						sendToAllClients("Server has stopped listening for connections.");
+					}
+				}
+				else if(command.equalsIgnoreCase("#close")){
+					try
+					{
+						serverUI.display("CLOSING");
+						close();
+						isClosed = true;
+					}
+					catch(IOException e) {}
+				}
+				else if(command.startsWith("#setport ")){
+					if(!isClosed){
+						serverUI.display("The server must be closed" +
+							" to change the port");
+					}
+					else{
+						String tempPort = command.substring(9, command.length());
+						setPort(Integer.parseInt(tempPort));
+						serverUI.display("Port set to " + tempPort);
+					}
+				}
+				else if(command.startsWith("#start")){
+					if(isListening())
+						serverUI.display("Server is already running");
+					else{
+						try
+						{
+							listen();
+						}
+						catch(IOException e) {}
+						isClosed = false;
+					}
+				}
+				else if(command.equalsIgnoreCase("#getport")){
+					serverUI.display("The current port is " + getPort());
+				}
+				else{
+					serverUI.display("Invalid command");
+				}
+				
+			}
+			
 }
 //End of EchoServer class
