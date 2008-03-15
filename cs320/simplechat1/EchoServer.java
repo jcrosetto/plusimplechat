@@ -21,11 +21,6 @@ public class EchoServer extends AbstractServer
 	//Class variables *************************************************
 	
 	/**
-	* The default port to listen on.
-	*/
-	final public static int DEFAULT_PORT = 5432;
-	
-	/**
 	* The interface type variable.  It allows the implementation of 
 	* the display method in the server.
 	*/
