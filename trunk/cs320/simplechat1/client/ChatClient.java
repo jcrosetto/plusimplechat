@@ -25,9 +25,12 @@ public class ChatClient extends AbstractClient
 	* The interface type variable.  It allows the implementation of 
 	* the display method in the client.
 	*/
-	ChatIF clientUI; 
+	private ChatIF clientUI; 
 	
-	String loginID;
+	/**
+	*The login ID of the client
+	*/
+	private String loginID;
 	
 	
 	//Constructors ****************************************************
@@ -128,7 +131,10 @@ public class ChatClient extends AbstractClient
 					openConnection();
 					sendToServer("#login " + loginID);
 				}
-				catch(IOException e) {}
+				catch(IOException e) {
+					clientUI.display("Unable to establish "
+						+ "a connection on port " + getPort());
+				}
 			}
 		}
 		else if(command.equalsIgnoreCase("#gethost"))
