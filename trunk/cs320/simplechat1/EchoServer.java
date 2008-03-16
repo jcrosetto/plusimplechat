@@ -67,7 +67,7 @@ public class EchoServer extends AbstractServer
 		if(tempMsg.startsWith("#login ") && client.getInfo("loginid")== null){
 			String username = tempMsg.substring(7);
 			client.setInfo("loginid", username);
-			System.out.println(client.getInfo("loginid")+" has logged in");
+			serverUI.display(client.getInfo("loginid")+" has logged in");
 		}
 		//if another login message is recieved after client is already logged on
 		else if(tempMsg.startsWith("#login ")){
@@ -78,7 +78,7 @@ public class EchoServer extends AbstractServer
 		}
 		//regular messages
 		else{
-			System.out.println("Message received: " + msg + " from " 
+			serverUI.display("Message received: " + msg + " from " 
 				+ client.getInfo("loginid"));
 			this.sendToAllClients(client.getInfo("loginid")+": "+msg);
 		}
@@ -90,8 +90,7 @@ public class EchoServer extends AbstractServer
 	*/
 	protected void serverStarted()
 	{
-		System.out.println
-		("Server listening for connections on port " + getPort());
+		serverUI.display("Server listening for connections on port " + getPort());
 	}
 	
 	/**
@@ -99,8 +98,7 @@ public class EchoServer extends AbstractServer
 	*/
 	protected void serverStopped()
 	{
-		System.out.println
-		("Server has stopped listening for connections.");
+		serverUI.display("Server has stopped listening for connections.");
 	}
 	
 	/**
@@ -109,7 +107,7 @@ public class EchoServer extends AbstractServer
 	* @param client the connection connected to the client.
 	*/
 	public void clientConnected(ConnectionToClient client) {
-		System.out.println("" + client + " has connected");
+		serverUI.display("" + client + " has connected");
 	}
 	
 	/**
@@ -118,7 +116,7 @@ public class EchoServer extends AbstractServer
 	* @param client the connection with the client.
 	*/
 	public void clientDisconnected(ConnectionToClient client) {
-		System.out.println(client.getInfo("loginid")+" has logged out");
+		serverUI.display(client.getInfo("loginid")+" has logged out");
 	}
 	/**
 	* This method is called each time an exception is thrown in a ConnectionToClient
@@ -128,7 +126,7 @@ public class EchoServer extends AbstractServer
 	* @param Throwable the exception thrown.
 	*/
 	public void clientException(ConnectionToClient client, Throwable exception) {
-		System.out.println(client.getInfo("loginid") + " has disconnected.");
+		serverUI.display(client.getInfo("loginid") + " has disconnected.");
 	}
 
 	/**
