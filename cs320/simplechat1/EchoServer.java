@@ -78,7 +78,8 @@ public class EchoServer extends AbstractServer
 		}
 		//regular messages
 		else{
-			System.out.println("Message received: " + msg + " from " + client.getInfo("loginid"));
+			System.out.println("Message received: " + msg + " from " 
+				+ client.getInfo("loginid"));
 			this.sendToAllClients(client.getInfo("loginid")+": "+msg);
 		}
 		
@@ -152,12 +153,7 @@ public class EchoServer extends AbstractServer
 	{
 		if(message.charAt(0) == '#')
 			serverCommand(message);
-		else{///////////////////////////////
-			////////////////////////////
-			///////////////////////////
-			/////////////////////////////////////////////////////
-			/////////////////////////
-			//check if closed
+		else{
 			serverUI.display(message);
 			sendToAllClients(message);
 		}
@@ -168,10 +164,12 @@ public class EchoServer extends AbstractServer
 	* @param message The command that will be processed.    
 	*/
 	public void serverCommand(String command){
+		//Quit command
 		if(command.equalsIgnoreCase("#quit")){
-			serverUI.display("QUITTING");
+			serverUI.display("Server is quitting");
 			quit();
 		}
+		//Stop command
 		else if(command.equalsIgnoreCase("#stop")){
 			if(!isListening())
 				serverUI.display("Server is already stopped");
@@ -180,15 +178,17 @@ public class EchoServer extends AbstractServer
 				sendToAllClients("Server has stopped listening for connections.");
 			}
 		}
+		//close command
 		else if(command.equalsIgnoreCase("#close")){
 			try
 			{
-				serverUI.display("CLOSING");
+				serverUI.display("Server is closing");
 				close();
 				isClosed = true;
 			}
 			catch(IOException e) {}
 		}
+		//setport command
 		else if(command.startsWith("#setport ")){
 			if(!isClosed){
 				serverUI.display("The server must be closed" +
@@ -200,6 +200,7 @@ public class EchoServer extends AbstractServer
 				serverUI.display("Port set to " + tempPort);
 			}
 		}
+		//start command
 		else if(command.startsWith("#start")){
 			if(isListening())
 				serverUI.display("Server is already running");
@@ -212,9 +213,11 @@ public class EchoServer extends AbstractServer
 				isClosed = false;
 			}
 		}
+		//getport command
 		else if(command.equalsIgnoreCase("#getport")){
 			serverUI.display("The current port is " + getPort());
 		}
+		//catch all other commands
 		else{
 			serverUI.display("Invalid command");
 		}
