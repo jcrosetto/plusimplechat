@@ -11,10 +11,7 @@ import common.*;
 * chat interface in order to activate the display() method.
 * Warning: Some of the code here is cloned in ServerConsole 
 *
-* @author Fran&ccedil;ois B&eacute;langer
-* @author Dr Timothy C. Lethbridge  
-* @author Dr Robert Lagani&egrave;re
-* @version July 2000
+* @version March 2008
 */
 public class ClientConsole implements ChatIF 
 {
@@ -38,6 +35,7 @@ public class ClientConsole implements ChatIF
 	/**
 	* Constructs an instance of the ClientConsole UI.
 	*
+	* @param loginID The loginID used by the client
 	* @param host The host to connect to.
 	* @param port The port to connect on.
 	*/
@@ -108,12 +106,15 @@ public class ClientConsole implements ChatIF
 		String host = "";
 		int port = 0;  //The port number
 		
-		if(args.length < 1){
-			System.out.println("You must specify a login ID!");
-			System.exit(0);
+		//require there to be a login id
+		if(args.length == 0){
+			System.out.println("Usage:");
+			System.out.println("ClientConsole loginId [host port]");
+			System.exit(1);
 		}
+		//set the loginID
 		loginID = args[0];
-		
+		//try/catch block to set defaults
 		try
 		{
 			host = args[1];
@@ -123,6 +124,11 @@ public class ClientConsole implements ChatIF
 		{
 			host = "localhost";
 			port = DEFAULT_PORT;
+		}
+		//catch nonnumbers in port
+		catch(NumberFormatException e){
+			System.out.println("Port must be a number");
+			System.exit(1);
 		}
 		ClientConsole chat= new ClientConsole(loginID, host, port);
 		chat.accept();  //Wait for console data
