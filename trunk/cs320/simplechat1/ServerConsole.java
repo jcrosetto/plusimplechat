@@ -31,7 +31,6 @@ public class ServerConsole implements ChatIF
 	/**
 	* Constructs an instance of the ServerConsole UI.
 	*
-	* @param host The host to connect to.
 	* @param port The port to connect on.
 	*/
 	public ServerConsole(int port) 
@@ -44,6 +43,7 @@ public class ServerConsole implements ChatIF
 		catch(IOException exception) 
 		{
 			System.out.println("ERROR - Could not listen for clients!");
+			System.exit(1);
 		}
 	}
 	
@@ -66,8 +66,6 @@ public class ServerConsole implements ChatIF
 			{
 				message = fromConsole.readLine();
 				server.handleMessageFromServerUI(message);
-				//display(message);
-				//server.sendToAllClients("SERVER MSG> " + message);
 			}
 		} 
 		catch (Exception ex) 
@@ -106,9 +104,13 @@ public class ServerConsole implements ChatIF
 		{
 			port = Integer.parseInt(args[0]); //Get port from command line
 		}
-		catch(Throwable t)
+		catch(ArrayIndexOutOfBoundsException e)
 		{
 			port = DEFAULT_PORT; //Set port to 5432
+		}
+		catch(NumberFormatException e){
+			System.out.println("Port must be a number");
+			System.exit(1);
 		}
 		
 		ServerConsole sv = new ServerConsole(port);
