@@ -68,6 +68,7 @@ public class EchoServer extends AbstractServer
 			String username = tempMsg.substring(7);
 			client.setInfo("loginid", username);
 			serverUI.display(client.getInfo("loginid")+" has logged in");
+			sendToAllClients(client.getInfo("loginid") + " has logged in.");
 		}
 		//if another login message is recieved after client is already logged on
 		else if(tempMsg.startsWith("#login ")){
@@ -117,6 +118,7 @@ public class EchoServer extends AbstractServer
 	*/
 	public void clientDisconnected(ConnectionToClient client) {
 		serverUI.display(client.getInfo("loginid")+" has logged out");
+		sendToAllClients(client.getInfo("loginid")+" has logged out");
 	}
 	/**
 	* This method is called each time an exception is thrown in a ConnectionToClient
