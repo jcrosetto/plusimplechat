@@ -1,3 +1,14 @@
+/**
+* Group Name: The Little Caesars
+* Project Part: Simplechat Phase 2
+* Title: ServerConsole
+* CS320 Spring 2008
+* March 17, 2008
+* Java
+* Phase 2 of the Simplechat program
+* The console for EchoServer
+*/
+
 import java.io.*;
 import client.*;
 import common.*;
