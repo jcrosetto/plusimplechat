@@ -1,6 +1,12 @@
-// This file contains material supporting section 3.7 of the textbook:
-// "Object Oriented Software Engineering" and is issued under the open-source
-// license found at www.lloseng.com 
+/**
+* Group Name: The Little Caesars
+* Project Part: Simplechat Phase 2
+* Title: EchoServer
+* CS320 Spring 2008
+* March 17, 2008
+* Java
+* Phase 2 of the Simplechat program
+*/
 
 import java.io.*;
 import ocsf.server.*;
