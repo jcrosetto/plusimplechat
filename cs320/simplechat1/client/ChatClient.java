@@ -76,9 +76,8 @@ public class ChatClient extends AbstractClient
 	public void handleMessageFromClientUI(String message)
 	{
 		//check the first character of the message for the # sign
-		if(message.length() > 0){
-			if(message.charAt(0) == '#')
-				clientCommand(message);
+		if(message.length() > 0 && message.charAt(0) == '#'){
+			clientCommand(message);
 		}
 		//check if connected, if not do not send message to server
 		else if(isConnected()){

@@ -151,10 +151,8 @@ public class EchoServer extends AbstractServer
 	*/
 	public void handleMessageFromServerUI(String message)
 	{
-		if(message.length() > 0){
-			if(message.charAt(0) == '#')
-				serverCommand(message);
-		}
+		if(message.length() > 0 && message.charAt(0) == '#')
+			serverCommand(message);
 		else{
 			serverUI.display(message);
 			sendToAllClients("SERVER MSG> " + message);
