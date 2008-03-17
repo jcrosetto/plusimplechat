@@ -76,8 +76,10 @@ public class ChatClient extends AbstractClient
 	public void handleMessageFromClientUI(String message)
 	{
 		//check the first character of the message for the # sign
-		if(message.charAt(0) == '#')
-			clientCommand(message);
+		if(message.length() > 0){
+			if(message.charAt(0) == '#')
+				clientCommand(message);
+		}
 		//check if connected, if not do not send message to server
 		else if(isConnected()){
 			try
@@ -143,8 +145,8 @@ public class ChatClient extends AbstractClient
 				}
 				catch(IOException e) {
 					clientUI.display("Unable to establish a" +
-						" connection to the host " +
-						getHost() + " on port " + getPort());
+					" connection to the host " +
+					getHost() + " on port " + getPort());
 				}
 			}
 		}

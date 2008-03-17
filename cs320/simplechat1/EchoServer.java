@@ -73,14 +73,14 @@ public class EchoServer extends AbstractServer
 		//if another login message is recieved after client is already logged on
 		else if(tempMsg.startsWith("#login ")){
 			try{
-			client.sendToClient("You are already logged on");
+				client.sendToClient("You are already logged on");
 			}
 			catch(IOException e){}
 		}
 		//regular messages
 		else{
 			serverUI.display("Message received: " + msg + " from " 
-				+ client.getInfo("loginid"));
+			+ client.getInfo("loginid"));
 			this.sendToAllClients(client.getInfo("loginid")+": "+msg);
 		}
 		
@@ -130,7 +130,7 @@ public class EchoServer extends AbstractServer
 	public void clientException(ConnectionToClient client, Throwable exception) {
 		serverUI.display(client.getInfo("loginid") + " has disconnected.");
 	}
-
+	
 	/**
 	* This method terminates the server.
 	*/
@@ -151,14 +151,16 @@ public class EchoServer extends AbstractServer
 	*/
 	public void handleMessageFromServerUI(String message)
 	{
-		if(message.charAt(0) == '#')
-			serverCommand(message);
+		if(message.length() > 0){
+			if(message.charAt(0) == '#')
+				serverCommand(message);
+		}
 		else{
 			serverUI.display(message);
 			sendToAllClients("SERVER MSG> " + message);
 		}
 	}
-		/**
+	/**
 	* This method processes the messages from the serverUI           
 	*
 	* @param message The command that will be processed.    
@@ -192,7 +194,7 @@ public class EchoServer extends AbstractServer
 		else if(command.startsWith("#setport ")){
 			if(!isClosed){
 				serverUI.display("The server must be closed" +
-					" to change the port");
+				" to change the port");
 			}
 			else{
 				String tempPort = command.substring(9, command.length());
