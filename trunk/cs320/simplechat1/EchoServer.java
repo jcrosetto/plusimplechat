@@ -64,7 +64,7 @@ public class EchoServer extends AbstractServer
 			catch(IOException e){}
 		}
 		//if the loginid is null and the message receiving is a login message
-		if(tempMsg.startsWith("#login ") && client.getInfo("loginid")== null){
+		else if(tempMsg.startsWith("#login ") && client.getInfo("loginid")== null){
 			String username = tempMsg.substring(7);
 			client.setInfo("loginid", username);
 			serverUI.display(client.getInfo("loginid")+" has logged in");
