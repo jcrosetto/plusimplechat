@@ -45,9 +45,14 @@ public class ChatClient extends AbstractClient
 		super(host, port); //Call the superclass constructor
 		this.clientUI = clientUI;
 		this.loginID = loginID;
-		openConnection();
-		//Immediately send the login information to the server
-		sendToServer("#login " + loginID);
+		try{
+			openConnection();
+			//Immediately send the login information to the server
+			sendToServer("#login " + loginID);
+		}
+		catch(IOException e){
+			clientUI.display("Cannot open connection. Awaiting command.");
+		}
 	}
 	
 	
@@ -82,8 +87,7 @@ public class ChatClient extends AbstractClient
 			catch(IOException e)
 			{
 				clientUI.display
-				("Could not send message to server.  Terminating client.");
-				quit();
+				("Could not send message to server.");
 			}
 		}
 		//if not connected display error message
