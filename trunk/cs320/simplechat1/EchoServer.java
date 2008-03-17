@@ -153,7 +153,7 @@ public class EchoServer extends AbstractServer
 			serverCommand(message);
 		else{
 			serverUI.display(message);
-			sendToAllClients(message);
+			sendToAllClients("SERVER MSG> " + message);
 		}
 	}
 		/**

@@ -139,7 +139,8 @@ public class ChatClient extends AbstractClient
 				}
 				catch(IOException e) {
 					clientUI.display("Unable to establish a" +
-						" connection on port " + getPort());
+						" connection to the host " +
+						getHost() + " on port " + getPort());
 				}
 			}
 		}
