@@ -209,7 +209,6 @@ public class ChatClient extends AbstractClient
 	*/
 	public void connectionException(Exception exception) {
 		clientUI.display("Connection to " + getHost() + " lost.");
-		quit();
 	}
 	/**
 	* This method is called after a connection has been established.
