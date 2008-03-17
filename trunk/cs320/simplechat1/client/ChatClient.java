@@ -149,6 +149,27 @@ public class ChatClient extends AbstractClient
 				}
 			}
 		}
+		//the login command with loginid
+		else if(command.startsWith("#login ")){
+			//cannot login if already logged on
+			if(isConnected()){
+				clientUI.display("You must be logged off to do that");
+			}
+			else{
+				try{
+				String newloginID = command.substring(7, command.length());
+				loginID = newloginID;
+				openConnection();
+				sendToServer("#login " + loginID);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to establish a" +
+						" connection to the host " +
+						getHost() + " on port " + getPort());	
+				}
+			}
+		}
+		
 		//gethost command
 		else if(command.equalsIgnoreCase("#gethost"))
 			clientUI.display("" + getHost());
