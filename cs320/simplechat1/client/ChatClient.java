@@ -1,5 +1,6 @@
 /**
 * Group Name: The Little Caesars
+* Members: Cory Stevens, Sean Maloy, James Crosetto, Madison Mosley, Seth Schwiethale
 * Project Part: Simplechat Phase 2
 * Title: ChatClient
 * CS320 Spring 2008
