@@ -129,6 +129,7 @@ public class EchoServer extends AbstractServer
 	*/
 	public void clientException(ConnectionToClient client, Throwable exception) {
 		serverUI.display(client.getInfo("loginid") + " has disconnected.");
+		sendToAllClients(client.getInfo("loginid") + " has disconnected.");
 	}
 	
 	/**
@@ -167,6 +168,7 @@ public class EchoServer extends AbstractServer
 		//Quit command
 		if(command.equalsIgnoreCase("#quit")){
 			serverUI.display("Server is quitting");
+			sendToAllClients("Server is quitting");
 			quit();
 		}
 		//Stop command
@@ -183,6 +185,7 @@ public class EchoServer extends AbstractServer
 			try
 			{
 				serverUI.display("Server is closing");
+				sendToAllClients("Server is closing");
 				close();
 				isClosed = true;
 			}
