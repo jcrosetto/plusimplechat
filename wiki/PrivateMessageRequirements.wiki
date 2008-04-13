@@ -8,6 +8,7 @@ May not be complete
 = Details =
 
 A.	*Problem.* Sometimes one user will want to communicate directly with another user. SimpleChat currently has no facility to handle private messages between individual users.
+
 B.	*Background Information.* This requirement will be based on top of the requirements for SimpleChat Phase2. In Phase2, any user with the client program could send a message to the server and the server then echoed that message to all of the connected clients. The feature of this requirement will be for a user on a client program to send a message to the server; inside this message will be the contents of the message along with a specified user to send it to. 
 
 Some issues:
