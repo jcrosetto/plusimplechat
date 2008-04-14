@@ -116,7 +116,7 @@ public class ClientConsole implements ChatIF
 		//require there to be a login id
 		if(args.length == 0){
 			System.out.println("Usage:");
-			System.out.println("ClientConsole loginId [host port]");
+			System.out.println("ClientConsole loginId [host port]!");
 			System.exit(1);
 		}
 		//set the loginID
