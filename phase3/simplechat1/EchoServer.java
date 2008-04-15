@@ -45,7 +45,7 @@ public class EchoServer extends AbstractServer
 	public EchoServer(int port, ChatIF serverUI) 
 	{
 		super(port);
-		this.serverUI = serverUI;
+		this.serverUI = serverUI; 
 	}
 	
 	
