@@ -77,7 +77,7 @@ public class EchoServer extends AbstractServer
 			serverUI.display(client.getInfo("loginid")+" has logged in");
 			sendToAllClients(client.getInfo("loginid") + " has logged in.");
 		}
-		//if another login message is recieved after client is already logged on
+		//if another login message is received after client is already logged on
 		else if(tempMsg.startsWith("#login ")){
 			try{
 				client.sendToClient("You are already logged on");
