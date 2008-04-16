@@ -10,6 +10,8 @@
 */
 
 import java.io.*;
+import java.util.StringTokenizer;
+
 import ocsf.server.*;
 import common.*;
 
@@ -84,6 +86,10 @@ public class EchoServer extends AbstractServer
 			}
 			catch(IOException e){}
 		}
+		//check for private message not to be sent to all clients
+		else if(tempMsg.startsWith("#private ")){
+			SendPrvtMsg(tempMsg, client);
+		}
 		//regular messages
 		else{
 			serverUI.display("Message received: " + msg + " from " 
@@ -93,6 +99,47 @@ public class EchoServer extends AbstractServer
 		
 	}
 	
+	/**
+	 * Method to send private message to specified user
+	 * added 4/15 by seth schwiethale
+	 * @param tempMsg
+	 * @param client
+	 */
+	private void SendPrvtMsg(String tempMsg, ConnectionToClient client) {
+		StringTokenizer msgData = new StringTokenizer(tempMsg);
+		Thread[] clientThreadList = getClientConnections();
+		ConnectionToClient clientTo;
+		
+		//get desired recipient and message from command
+		try{
+			msgData.nextToken();
+			String recipient = msgData.nextToken();
+			String shave = ("#private  "+recipient);
+			String toSend = tempMsg.substring(shave.length());
+			
+			//do not allow user to pm themselves
+			if(client.getInfo("loginid").equals(recipient)){
+				client.sendToClient("You may not send private messages to yourself.");
+				return;
+			}
+			
+			//try to find recipient in clients and then send message
+			for(int i = 0; i<clientThreadList.length;i++){
+				clientTo = (ConnectionToClient) clientThreadList[i];
+				if(((clientTo.getInfo("loginid")).equals(recipient))){
+					clientTo.sendToClient(client.getInfo("loginid")+": "+toSend);
+					serverUI.display(client.getInfo("loginid")+" said,'"+toSend+"' to "+clientTo.getInfo("loginid"));
+					return;
+				}
+			}
+			//recipient was not found in connected clients
+			client.sendToClient("the user you specified is not connected");
+		}
+		catch(Exception e){}
+}
+		
+
+
 	/**
 	* This method is called when the server starts listening for connections
 	*/

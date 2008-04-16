@@ -13,6 +13,7 @@ package client;
 import ocsf.client.*;
 import common.*;
 import java.io.*;
+import java.util.StringTokenizer;
 
 /**
 * This class overrides some of the methods defined in the abstract
@@ -215,12 +216,42 @@ public class ChatClient extends AbstractClient
 				}
 			}
 		}
+		
+		//check for private message command
+		//first implementation on 4/15 by seth schwiethale
+		else if(command.startsWith("#private")){
+			doPM(command);
+		}
+		
 		//catch anything that starts with #, but isnt a command
 		else{
 			clientUI.display("Invalid command");
 		}
 		
 	}
+	
+	/**
+	 * This method does the client side verification 
+	 * of a private message
+	 * @param command
+	 */
+	private void doPM(String command) {
+		//check that private message command is in valid form
+		StringTokenizer verify = new StringTokenizer(command);
+		if (verify.countTokens()>=3){
+			try{
+				sendToServer(command);
+			}
+			catch(IOException e){
+				clientUI.display("Unable to establish a" +
+					" connection to the host " +
+					getHost() + " on port " + getPort());	
+			}
+		}
+		else clientUI.display("usage: #private <to user id> <message>");
+	}
+
+
 	/**
 	* This method is called after the connection has been closed.
 	*/
