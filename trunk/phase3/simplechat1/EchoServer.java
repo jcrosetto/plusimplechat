@@ -78,6 +78,13 @@ public class EchoServer extends AbstractServer
 			client.setInfo("loginid", username);
 			serverUI.display(client.getInfo("loginid")+" has logged in");
 			sendToAllClients(client.getInfo("loginid") + " has logged in.");
+			//following added 4/16 by james crosetto
+			client.setInfo("channel", "default");
+			try{
+				client.sendToClient("You are now connected to channel: default");
+			}
+			catch(Exception e){}
+			
 		}
 		//if another login message is received after client is already logged on
 		else if(tempMsg.startsWith("#login ")){
@@ -89,6 +96,12 @@ public class EchoServer extends AbstractServer
 		//check for private message not to be sent to all clients
 		else if(tempMsg.startsWith("#private ")){
 			SendPrvtMsg(tempMsg, client);
+		}
+		//change channel
+		//first implementation 4/16 by james crosetto
+		else if(tempMsg.startsWith("#channel")){
+			changeChannel(tempMsg, client);
+			
 		}
 		//regular messages
 		else{
@@ -146,7 +159,7 @@ public class EchoServer extends AbstractServer
 		
 
 	/**
-	 * Seperate method for Server sent Private Messages.
+	 * Separate method for Server sent Private Messages.
 	 * added because of difference with SendPrivMsg parameters
 	 * -tag author:a:"Seth Schwiethale"
 	 * @version 3 04/16/08
@@ -175,6 +188,85 @@ public class EchoServer extends AbstractServer
 			}
 			//recipient was not found in connected clients
 			serverUI.display("the user you specified is not connected");
+		}
+		catch(Exception e){
+			
+		}
+	}
+	
+	
+	/**
+	 * Used when a client sends a #channel command. Changes the clients channel or
+	 * returns the channel they are currently on.
+	 * @param tempMsg The message with the #channel command and the new channel
+	 * 					to connect to.
+	 * @param client The client changing channels.
+	 * @date created 4/16/08
+	 * @author James Crosetto
+	 */
+	private void changeChannel(String tempMsg, ConnectionToClient client)
+	{
+		//channel is specified if msg length is greater than 9
+		try{
+			if(tempMsg.length() > 9){
+				//checks to see if channel contains space
+				int space = tempMsg.indexOf(" ", 9);
+				//get channel
+				//no space - valid channel name
+				if(space == -1){
+					String channel = tempMsg.substring(9, tempMsg.length());
+					if(client.getInfo("channel").equals(channel)){
+						client.sendToClient("You are already on channel: " +
+								client.getInfo("channel"));
+					}
+					else{
+						client.setInfo("channel", channel);
+						client.sendToClient("You are now connected to channel: " +
+								channel);
+					}
+				}
+				else{
+					client.sendToClient("Invalid channel name. Channels cannot contain spaces.");
+				}
+				
+					
+			}
+			//display current channel as private message if new channel isn't specified
+			else{
+				client.sendToClient("You are currently connected to channel: " + 
+						client.getInfo("channel"));
+				
+			}
+		}
+		catch(Exception e){}
+	}
+	
+	/**
+	 * Sends a message to a specified channel.
+	 * @param msg The message to be sent.
+	 * @param channel The channel to send the message to.
+	 * @date created 4/17/08
+	 * @author James Crosetto
+	 */
+	private void sendToChannel(String msg, String channel)
+	{
+		Thread[] clientThreadList = getClientConnections();
+		ConnectionToClient clientTo;
+		boolean sent = false; //true if message sent to a client
+		
+		try{
+			
+			//try to find recipient in clients and then send message
+			for(int i = 0; i < clientThreadList.length; i++){
+				clientTo = (ConnectionToClient) clientThreadList[i];
+				if(((clientTo.getInfo("channel")).equals(channel))){
+					clientTo.sendToClient("SERVER MESSAGE: " + msg);
+					sent = true;
+				}
+			}
+			
+			if(!sent)
+				serverUI.display("The specified channel was not found.");
 		}
 		catch(Exception e){
 			
@@ -322,6 +414,22 @@ public class EchoServer extends AbstractServer
 		else if(command.startsWith("#private")){
 			serverPM(command);
 		}
+		//send message to specified channel
+		//first implementation 4/16/08 by james crosetto
+		else if(command.startsWith("#channel ")){
+			try{
+				//find end of channel name
+				int space = command.indexOf(" ", 9);
+				//get channel name
+				String channel = command.substring(9, space);
+				sendToChannel(command.substring(space+1, command.length()), channel);
+			}
+			catch(IndexOutOfBoundsException e){
+				serverUI.display("Usage: #channel <channel> <message>");
+			}
+			
+		}
+		
 		else{
 			serverUI.display("Invalid command");
 		}
