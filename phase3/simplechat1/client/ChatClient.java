@@ -223,6 +223,17 @@ public class ChatClient extends AbstractClient
 			doPM(command);
 		}
 		
+		//channel command
+		//first implementation on 4/16 by james crosetto
+		else if (command.startsWith("#channel")){
+			try{
+				sendToServer(command);
+			}
+			catch(IOException e){
+				clientUI.display("Unable to send message to server.");
+			}
+		}
+		
 		//catch anything that starts with #, but isnt a command
 		else{
 			clientUI.display("Invalid command");
