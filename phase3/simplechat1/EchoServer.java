@@ -123,6 +123,12 @@ public class EchoServer extends AbstractServer
 				return;
 			}
 			
+			//user sends a private message to the server
+			else if(recipient.equalsIgnoreCase("SERVER")){
+				serverUI.display("PRIVATE from "+client.getInfo("loginid")+": "+toSend);
+				return;
+			}
+			
 			//try to find recipient in clients and then send message
 			for(int i = 0; i<clientThreadList.length;i++){
 				clientTo = (ConnectionToClient) clientThreadList[i];
@@ -139,6 +145,42 @@ public class EchoServer extends AbstractServer
 }
 		
 
+	/**
+	 * Seperate method for Server sent Private Messages.
+	 * added because of difference with SendPrivMsg parameters
+	 * -tag author:a:"Seth Schwiethale"
+	 * @version 3 04/16/08
+	 * @date 04/
+	 * @param tempMsg
+	 */
+	private void serverPM(String tempMsg) {
+		StringTokenizer msgData = new StringTokenizer(tempMsg);
+		Thread[] clientThreadList = getClientConnections();
+		ConnectionToClient clientTo;
+		
+		//get desired recipient and message from command
+		try{
+			msgData.nextToken();
+			String recipient = msgData.nextToken();
+			String shave = ("#private  "+recipient);
+			String toSend = tempMsg.substring(shave.length());
+			
+			//try to find recipient in clients and then send message
+			for(int i = 0; i<clientThreadList.length;i++){
+				clientTo = (ConnectionToClient) clientThreadList[i];
+				if(((clientTo.getInfo("loginid")).equals(recipient))){
+					clientTo.sendToClient("SERVER MESSAGE: "+toSend);
+					return;
+				}
+			}
+			//recipient was not found in connected clients
+			serverUI.display("the user you specified is not connected");
+		}
+		catch(Exception e){
+			
+		}
+	}
+	
 
 	/**
 	* This method is called when the server starts listening for connections
@@ -275,11 +317,16 @@ public class EchoServer extends AbstractServer
 			serverUI.display("The current port is " + getPort());
 		}
 		//catch all other commands
+		//check for private message command
+		//first implementation on 4/15 by seth schwiethale
+		else if(command.startsWith("#private")){
+			serverPM(command);
+		}
 		else{
 			serverUI.display("Invalid command");
 		}
 		
 	}
-	
+
 }
 //End of EchoServer class
