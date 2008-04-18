@@ -14,6 +14,7 @@ import java.util.StringTokenizer;
 
 import ocsf.server.*;
 import common.*;
+import java.util.*;
 
 /**
 * This class overrides some of the methods in the abstract 
@@ -36,6 +37,11 @@ public class EchoServer extends AbstractServer
 	*/
 	private boolean isClosed = false; 
 	
+	/**
+	 * Hashmap to represent user information that is stored server side.
+	 */
+	private HashMap<String,String> userInfo; 
+	
 	//Constructors ****************************************************
 	
 	/**
@@ -48,6 +54,8 @@ public class EchoServer extends AbstractServer
 	{
 		super(port);
 		this.serverUI = serverUI; 
+		userInfo = new HashMap<String, String>();
+		userInfo.put("server", "server" );
 	}
 	
 	
@@ -72,36 +80,15 @@ public class EchoServer extends AbstractServer
 			}
 			catch(IOException e){}
 		}
-		//if the loginid is null and the message receiving is a login message
-		else if(tempMsg.startsWith("#login ") && client.getInfo("loginid")== null){
-			String username = tempMsg.substring(7);
-			client.setInfo("loginid", username);
-			serverUI.display(client.getInfo("loginid")+" has logged in");
-			sendToAllClients(client.getInfo("loginid") + " has logged in.");
-			//following added 4/16 by james crosetto
-			client.setInfo("channel", "default");
-			try{
-				client.sendToClient("You are now connected to channel: default");
-			}
-			catch(Exception e){}
+		else if(tempMsg.startsWith("#login ")){
+			System.out.println("yeppers");
+			handleLogin(tempMsg, client);
 			
 		}
-		//if another login message is received after client is already logged on
-		else if(tempMsg.startsWith("#login ")){
-			try{
-				client.sendToClient("You are already logged on");
-			}
-			catch(IOException e){}
-		}
+
 		//check for private message not to be sent to all clients
 		else if(tempMsg.startsWith("#private ")){
 			SendPrvtMsg(tempMsg, client);
-		}
-		//change channel
-		//first implementation 4/16 by james crosetto
-		else if(tempMsg.startsWith("#channel")){
-			changeChannel(tempMsg, client);
-			
 		}
 		//regular messages
 		else{
@@ -113,10 +100,58 @@ public class EchoServer extends AbstractServer
 	}
 	
 	/**
+	 * Method that handles all login information from users
+	 * Added 4/16
+	 * @param msg The entire message sent by the client attempting to login
+	 * @param client The client that is connecting to the server.
+	 * @author cory stevens
+	 */
+	private void handleLogin(String msg, ConnectionToClient client){
+		
+		String password = "";
+		String username = "";
+		String[] parsedString = msg.split(" ");
+		password = parsedString[2];
+		username = parsedString[1];
+		System.out.println(password);
+		
+		System.out.println("madeit");
+		//if the loginid is null and the message receiving is a login message
+		if(msg.startsWith("#login ") && client.getInfo("loginid")== null){
+			client.setInfo("loginid", username);
+			client.setInfo("password", password);
+			serverUI.display(client.getInfo("loginid")+" has logged in");
+			sendToAllClients(client.getInfo("loginid") + " has logged in.");
+		}
+		//if another login message is received after client is already logged on
+		else if(msg.startsWith("#login ") && client.getInfo("loginid") != null){
+			try{
+				client.sendToClient("You are already logged on");
+			}
+			catch(IOException e){}
+		}
+		
+	}
+	
+	/**
+	 * Method to add a new user into the hashmap
+	 * Added 4/15
+	 * @param loginID The new users loginID
+	 * @param passowrd The new users password
+	 * @author cory stevens
+	 */
+	private void addNewUser(String loginID, String password){
+		
+		userInfo.put(loginID, password);
+		
+	}
+	
+	/**
 	 * Method to send private message to specified user
-	 * added 4/15 by seth schwiethale
+	 * Added 4/15 
 	 * @param tempMsg
 	 * @param client
+	 * @author seth schwiethale
 	 */
 	private void SendPrvtMsg(String tempMsg, ConnectionToClient client) {
 		StringTokenizer msgData = new StringTokenizer(tempMsg);
@@ -159,7 +194,7 @@ public class EchoServer extends AbstractServer
 		
 
 	/**
-	 * Separate method for Server sent Private Messages.
+	 * Seperate method for Server sent Private Messages.
 	 * added because of difference with SendPrivMsg parameters
 	 * -tag author:a:"Seth Schwiethale"
 	 * @version 3 04/16/08
@@ -188,85 +223,6 @@ public class EchoServer extends AbstractServer
 			}
 			//recipient was not found in connected clients
 			serverUI.display("the user you specified is not connected");
-		}
-		catch(Exception e){
-			
-		}
-	}
-	
-	
-	/**
-	 * Used when a client sends a #channel command. Changes the clients channel or
-	 * returns the channel they are currently on.
-	 * @param tempMsg The message with the #channel command and the new channel
-	 * 					to connect to.
-	 * @param client The client changing channels.
-	 * @date created 4/16/08
-	 * @author James Crosetto
-	 */
-	private void changeChannel(String tempMsg, ConnectionToClient client)
-	{
-		//channel is specified if msg length is greater than 9
-		try{
-			if(tempMsg.length() > 9){
-				//checks to see if channel contains space
-				int space = tempMsg.indexOf(" ", 9);
-				//get channel
-				//no space - valid channel name
-				if(space == -1){
-					String channel = tempMsg.substring(9, tempMsg.length());
-					if(client.getInfo("channel").equals(channel)){
-						client.sendToClient("You are already on channel: " +
-								client.getInfo("channel"));
-					}
-					else{
-						client.setInfo("channel", channel);
-						client.sendToClient("You are now connected to channel: " +
-								channel);
-					}
-				}
-				else{
-					client.sendToClient("Invalid channel name. Channels cannot contain spaces.");
-				}
-				
-					
-			}
-			//display current channel as private message if new channel isn't specified
-			else{
-				client.sendToClient("You are currently connected to channel: " + 
-						client.getInfo("channel"));
-				
-			}
-		}
-		catch(Exception e){}
-	}
-	
-	/**
-	 * Sends a message to a specified channel.
-	 * @param msg The message to be sent.
-	 * @param channel The channel to send the message to.
-	 * @date created 4/17/08
-	 * @author James Crosetto
-	 */
-	private void sendToChannel(String msg, String channel)
-	{
-		Thread[] clientThreadList = getClientConnections();
-		ConnectionToClient clientTo;
-		boolean sent = false; //true if message sent to a client
-		
-		try{
-			
-			//try to find recipient in clients and then send message
-			for(int i = 0; i < clientThreadList.length; i++){
-				clientTo = (ConnectionToClient) clientThreadList[i];
-				if(((clientTo.getInfo("channel")).equals(channel))){
-					clientTo.sendToClient("SERVER MESSAGE: " + msg);
-					sent = true;
-				}
-			}
-			
-			if(!sent)
-				serverUI.display("The specified channel was not found.");
 		}
 		catch(Exception e){
 			
@@ -414,22 +370,6 @@ public class EchoServer extends AbstractServer
 		else if(command.startsWith("#private")){
 			serverPM(command);
 		}
-		//send message to specified channel
-		//first implementation 4/16/08 by james crosetto
-		else if(command.startsWith("#channel ")){
-			try{
-				//find end of channel name
-				int space = command.indexOf(" ", 9);
-				//get channel name
-				String channel = command.substring(9, space);
-				sendToChannel(command.substring(space+1, command.length()), channel);
-			}
-			catch(IndexOutOfBoundsException e){
-				serverUI.display("Usage: #channel <channel> <message>");
-			}
-			
-		}
-		
 		else{
 			serverUI.display("Invalid command");
 		}

@@ -44,14 +44,15 @@ public class ClientConsole implements ChatIF
 	* Constructs an instance of the ClientConsole UI.
 	*
 	* @param loginID The loginID used by the client
+	* @param password The password used by the client
 	* @param host The host to connect to.
 	* @param port The port to connect on.
 	*/
-	public ClientConsole(String loginID, String host, int port) 
+	public ClientConsole(String loginID,String password, String host, int port) 
 	{
 		try 
 		{
-			client= new ChatClient(loginID, host, port, this);
+			client= new ChatClient(loginID, password, host, port, this);
 		} 
 		catch(IOException exception) 
 		{
@@ -110,22 +111,26 @@ public class ClientConsole implements ChatIF
 	public static void main(String[] args) 
 	{
 		String loginID = "";
+		String password = "";
 		String host = "";
 		int port = 0;  //The port number
 		
 		//require there to be a login id
 		if(args.length == 0){
 			System.out.println("Usage:");
-			System.out.println("ClientConsole loginId [host port]!");
+			System.out.println("ClientConsole loginId password [host port]");
 			System.exit(1);
 		}
 		//set the loginID
 		loginID = args[0];
+		//set the password
+		//**************Need check here****************
+		password = args[1];
 		//try/catch block to set defaults
 		try
 		{
-			host = args[1];
-			port = Integer.parseInt(args[2]);
+			host = args[2];
+			port = Integer.parseInt(args[3]);
 		}
 		catch(ArrayIndexOutOfBoundsException e)
 		{
@@ -137,7 +142,7 @@ public class ClientConsole implements ChatIF
 			System.out.println("Port must be a number");
 			System.exit(1);
 		}
-		ClientConsole chat= new ClientConsole(loginID, host, port);
+		ClientConsole chat= new ClientConsole(loginID, password ,host, port);
 		chat.accept();  //Wait for console data
 	}
 }

@@ -35,6 +35,10 @@ public class ChatClient extends AbstractClient
 	*/
 	String loginID;
 	
+	/**
+	 * The password of the client
+	 */
+	String password;
 	
 	//Constructors ****************************************************
 	
@@ -46,16 +50,17 @@ public class ChatClient extends AbstractClient
 	* @param port The port number to connect on.
 	* @param clientUI The interface type variable.
 	*/
-	public ChatClient(String loginID, String host, int port, ChatIF clientUI)
+	public ChatClient(String loginID, String password, String host, int port, ChatIF clientUI)
 	throws IOException
 	{
 		super(host, port); //Call the superclass constructor
 		this.clientUI = clientUI;
 		this.loginID = loginID;
+		this.password = password;
 		try{
 			openConnection();
 			//Immediately send the login information to the server
-			sendToServer("#login " + loginID);
+			sendToServer("#login " + loginID + " " + password);
 		}
 		catch(IOException e){
 			clientUI.display("Cannot open connection. Awaiting command.");
