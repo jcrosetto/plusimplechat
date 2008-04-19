@@ -347,6 +347,31 @@ public class EchoServer extends AbstractServer
 		}
 	}
 	/**
+	 * Method that that will take the userInfo HashMap and output it into a text file.
+	 * Added on 4/18
+	 * @author Cory Stevens
+	 */
+	private void outputUserInfo(){
+		Iterator<Map.Entry<String, String>> it = userInfo.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<String,String> entry = (Map.Entry<String,String>) it.next();
+			String key = (String) entry.getKey();
+			String value = (String) entry.getValue();
+			System.out.println("Username: " + key + " Password: " + value);
+		}
+	}
+	
+	/**
+	 * Method that will take in a text file and store it in the userInfo HashMap.
+	 * Added on 4/18
+	 * @author Cory Stevens
+	 */
+	private void inputUserInfo(){
+		
+		
+	}
+	
+	/**
 	 * Method to store the clients username
 	 * @param username The username of the client being stored.
 	 * @param client The client that the username is being stored for.
@@ -533,7 +558,9 @@ public class EchoServer extends AbstractServer
 			catch(IndexOutOfBoundsException e){
 				serverUI.display("Usage: #channel <channel> <message>");
 			}
-			
+		}
+		else if(command.startsWith("#outputUsers")){
+			outputUserInfo();
 		}
 		else{
 			serverUI.display("Invalid command");
