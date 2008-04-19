@@ -72,29 +72,33 @@ public class EchoServer extends AbstractServer
 	{
 		//convert object to string	
 		String tempMsg = msg.toString();
-		//if the loginid is null and the message receiving is not a login message
-		if(!tempMsg.startsWith("#login ") && client.getInfo("loginid")== null){
+		//if the username is null and the message receiving is not a login message
+		if(!tempMsg.startsWith("#login ") && client.getInfo("username")== null){
 			try{
-				client.sendToClient("LoginID must be specified");
+				client.sendToClient("Username must be specified");
 				client.close();
 			}
 			catch(IOException e){}
 		}
 		else if(tempMsg.startsWith("#login ")){
-			System.out.println("yeppers");
 			handleLogin(tempMsg, client);
 			
 		}
-
 		//check for private message not to be sent to all clients
 		else if(tempMsg.startsWith("#private ")){
 			SendPrvtMsg(tempMsg, client);
 		}
+		//change channel
+		//first implementation 4/16 by james crosetto
+		else if(tempMsg.startsWith("#channel ")){
+			changeChannel(tempMsg, client);
+			
+		}
 		//regular messages
 		else{
 			serverUI.display("Message received: " + msg + " from " 
-			+ client.getInfo("loginid"));
-			this.sendToAllClients(client.getInfo("loginid")+": "+msg);
+			+ client.getInfo("username"));
+			this.sendToAllClients(client.getInfo("username")+": "+msg);
 		}
 		
 	}
@@ -113,18 +117,54 @@ public class EchoServer extends AbstractServer
 		String[] parsedString = msg.split(" ");
 		password = parsedString[2];
 		username = parsedString[1];
-		System.out.println(password);
-		
-		System.out.println("madeit");
-		//if the loginid is null and the message receiving is a login message
-		if(msg.startsWith("#login ") && client.getInfo("loginid")== null){
-			client.setInfo("loginid", username);
-			client.setInfo("password", password);
-			serverUI.display(client.getInfo("loginid")+" has logged in");
-			sendToAllClients(client.getInfo("loginid") + " has logged in.");
+		//if the username is null and the message receiving is a login message
+		if(client.getInfo("username")== null){
+			//check if client is a new user
+			if(!userInfo.containsKey(username)){
+				setClientUsername(username, client);
+				setClientPassword(password, client);
+				addNewUser(username,password);
+				try{
+					client.sendToClient("You are a new user");
+				}
+				catch(Exception e){}
+			}
+			//client is not a new user
+			else{
+				String tempPassword = userInfo.get(username);
+				System.out.println(tempPassword);
+				//compare stored password to connecting users password
+				if(tempPassword.equals(password)){
+					try{
+						client.sendToClient("Welcome back " + username);
+						setClientUsername(username, client);
+						setClientPassword(password, client);
+					}
+					catch(Exception e){}
+					
+				}
+				//if passwords are not equal inform the user and exit them out.
+				else{
+					try{
+						client.sendToClient("I'm sorry, but your password is incorrect for that username.");
+						client.close();
+					}
+					catch(Exception e){}
+					return;
+				}
+				
+			}
+			serverUI.display(client.getInfo("username")+" has logged in");
+			sendToAllClients(client.getInfo("username") + " has logged in.");
+			//following added 4/16 by james crosetto
+			client.setInfo("channel", "default");
+			try{
+				client.sendToClient("You are now connected to channel: default");
+			}
+			catch(Exception e){}
 		}
 		//if another login message is received after client is already logged on
-		else if(msg.startsWith("#login ") && client.getInfo("loginid") != null){
+		else if(client.getInfo("username") != null){
 			try{
 				client.sendToClient("You are already logged on");
 			}
@@ -136,13 +176,13 @@ public class EchoServer extends AbstractServer
 	/**
 	 * Method to add a new user into the hashmap
 	 * Added 4/15
-	 * @param loginID The new users loginID
+	 * @param username The new users username
 	 * @param passowrd The new users password
 	 * @author cory stevens
 	 */
-	private void addNewUser(String loginID, String password){
+	private void addNewUser(String username, String password){
 		
-		userInfo.put(loginID, password);
+		userInfo.put(username, password);
 		
 	}
 	
@@ -166,23 +206,23 @@ public class EchoServer extends AbstractServer
 			String toSend = tempMsg.substring(shave.length());
 			
 			//do not allow user to pm themselves
-			if(client.getInfo("loginid").equals(recipient)){
+			if(client.getInfo("username").equals(recipient)){
 				client.sendToClient("You may not send private messages to yourself.");
 				return;
 			}
 			
 			//user sends a private message to the server
 			else if(recipient.equalsIgnoreCase("SERVER")){
-				serverUI.display("PRIVATE from "+client.getInfo("loginid")+": "+toSend);
+				serverUI.display("PRIVATE from "+client.getInfo("username")+": "+toSend);
 				return;
 			}
 			
 			//try to find recipient in clients and then send message
 			for(int i = 0; i<clientThreadList.length;i++){
 				clientTo = (ConnectionToClient) clientThreadList[i];
-				if(((clientTo.getInfo("loginid")).equals(recipient))){
-					clientTo.sendToClient(client.getInfo("loginid")+": "+toSend);
-					serverUI.display(client.getInfo("loginid")+" said,'"+toSend+"' to "+clientTo.getInfo("loginid"));
+				if(((clientTo.getInfo("username")).equals(recipient))){
+					clientTo.sendToClient("PM from " + client.getInfo("username")+": "+toSend);
+					serverUI.display(client.getInfo("username")+" said,'"+toSend+"' to "+clientTo.getInfo("username"));
 					return;
 				}
 			}
@@ -194,7 +234,7 @@ public class EchoServer extends AbstractServer
 		
 
 	/**
-	 * Seperate method for Server sent Private Messages.
+	 * Separate method for Server sent Private Messages.
 	 * added because of difference with SendPrivMsg parameters
 	 * -tag author:a:"Seth Schwiethale"
 	 * @version 3 04/16/08
@@ -216,7 +256,7 @@ public class EchoServer extends AbstractServer
 			//try to find recipient in clients and then send message
 			for(int i = 0; i<clientThreadList.length;i++){
 				clientTo = (ConnectionToClient) clientThreadList[i];
-				if(((clientTo.getInfo("loginid")).equals(recipient))){
+				if(((clientTo.getInfo("username")).equals(recipient))){
 					clientTo.sendToClient("SERVER MESSAGE: "+toSend);
 					return;
 				}
@@ -229,6 +269,107 @@ public class EchoServer extends AbstractServer
 		}
 	}
 	
+	/**
+	 * Used when a client sends a #channel command. Changes the clients channel or
+	 * returns the channel they are currently on.
+	 * @param tempMsg The message with the #channel command and the new channel
+	 * 					to connect to.
+	 * @param client The client changing channels.
+	 * @date created 4/16/08
+	 * @author James Crosetto
+	 */
+	private void changeChannel(String tempMsg, ConnectionToClient client)
+	{
+		//channel is specified if msg length is greater than 9
+		try{
+			if(tempMsg.length() > 9){
+				//checks to see if channel contains space
+				int space = tempMsg.indexOf(" ", 9);
+				//get channel
+				//no space - valid channel name
+				if(space == -1){
+					String channel = tempMsg.substring(9, tempMsg.length());
+					if(client.getInfo("channel").equals(channel)){
+						client.sendToClient("You are already on channel: " +
+								client.getInfo("channel"));
+					}
+					else{
+						client.setInfo("channel", channel);
+						client.sendToClient("You are now connected to channel: " +
+								channel);
+					}
+				}
+				else{
+					client.sendToClient("Invalid channel name. Channels cannot contain spaces.");
+				}
+				
+					
+			}
+			//display current channel as private message if new channel isn't specified
+			else{
+				client.sendToClient("You are currently connected to channel: " + 
+						client.getInfo("channel"));
+				
+			}
+		}
+		catch(Exception e){}
+	}
+	
+	/**
+	 * Sends a message to a specified channel.
+	 * @param msg The message to be sent.
+	 * @param channel The channel to send the message to.
+	 * @date created 4/17/08
+	 * @author James Crosetto
+	 */
+	private void sendToChannel(String msg, String channel)
+	{
+		Thread[] clientThreadList = getClientConnections();
+		ConnectionToClient clientTo;
+		boolean sent = false; //true if message sent to a client
+		
+		try{
+			
+			//try to find recipient in clients and then send message
+			for(int i = 0; i < clientThreadList.length; i++){
+				clientTo = (ConnectionToClient) clientThreadList[i];
+				if(((clientTo.getInfo("channel")).equals(channel))){
+					clientTo.sendToClient("SERVER MESSAGE: " + msg);
+					sent = true;
+				}
+			}
+			
+			if(!sent)
+				serverUI.display("The specified channel was not found.");
+		}
+		catch(Exception e){
+			
+		}
+	}
+	/**
+	 * Method to store the clients username
+	 * @param username The username of the client being stored.
+	 * @param client The client that the username is being stored for.
+	 * @date created 4/18/08
+	 * @author Cory Stevens
+	 */
+	private void setClientUsername(String username, ConnectionToClient client){
+		client.setInfo("username", username);
+		//userInfo.put("username", username);
+		
+	}
+	/**
+	 * Method to store the clients password
+	 * @param username The password of the client being stored.
+	 * @param client The client that the password is being stored for.
+	 * @date created 4/18/08
+	 * @author Cory Stevens
+	 */
+	private void setClientPassword(String password, ConnectionToClient client){
+		client.setInfo("password", password);
+		//userInfo.put("password", password);
+		
+	}
 
 	/**
 	* This method is called when the server starts listening for connections
@@ -257,23 +398,32 @@ public class EchoServer extends AbstractServer
 	
 	/**
 	* This method is called each time a client disconnects.
-	*
+	* On 4/18 Cory added a check for null username for users that didn't
+	* full connect.  For example if a user connects but uses the wrong password.
 	* @param client the connection with the client.
 	*/
 	public void clientDisconnected(ConnectionToClient client) {
-		serverUI.display(client.getInfo("loginid")+" has logged out");
-		sendToAllClients(client.getInfo("loginid")+" has logged out");
+		//added 4/18
+		if(client.getInfo("username") != null){
+		serverUI.display(client.getInfo("username")+" has logged out");
+		sendToAllClients(client.getInfo("username")+" has logged out");
+		}
 	}
 	/**
 	* This method is called each time an exception is thrown in a ConnectionToClient
 	* thread,
 	*
+	* On 4/18 Cory added a check for null username for users that didn't
+	* full connect.  For example if a user connects but doesn't use a password.
 	* @param client the client that raised the exception.
 	* @param Throwable the exception thrown.
 	*/
 	public void clientException(ConnectionToClient client, Throwable exception) {
-		serverUI.display(client.getInfo("loginid") + " has disconnected.");
-		sendToAllClients(client.getInfo("loginid") + " has disconnected.");
+		//added 4/18
+		if(client.getInfo("username") != null){
+		serverUI.display(client.getInfo("username") + " has disconnected.");
+		sendToAllClients(client.getInfo("username") + " has disconnected.");
+		}
 	}
 	
 	/**
@@ -369,6 +519,21 @@ public class EchoServer extends AbstractServer
 		//first implementation on 4/15 by seth schwiethale
 		else if(command.startsWith("#private")){
 			serverPM(command);
+		}
+		//send message to specified channel
+		//first implementation 4/16/08 by james crosetto
+		else if(command.startsWith("#channel ")){
+			try{
+				//find end of channel name
+				int space = command.indexOf(" ", 9);
+				//get channel name
+				String channel = command.substring(9, space);
+				sendToChannel(command.substring(space+1, command.length()), channel);
+			}
+			catch(IndexOutOfBoundsException e){
+				serverUI.display("Usage: #channel <channel> <message>");
+			}
+			
 		}
 		else{
 			serverUI.display("Invalid command");

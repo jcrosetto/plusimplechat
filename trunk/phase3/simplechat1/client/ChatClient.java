@@ -31,9 +31,9 @@ public class ChatClient extends AbstractClient
 	*/
 	private ChatIF clientUI;
 	/**
-	* the loginID of the client
+	* the username of the client
 	*/
-	String loginID;
+	String username;
 	
 	/**
 	 * The password of the client
@@ -45,22 +45,22 @@ public class ChatClient extends AbstractClient
 	/**
 	* Constructs an instance of the chat client.
 	*
-	* @param loginID The clients loginID
+	* @param username The clients loginID
 	* @param host The server to connect to.
 	* @param port The port number to connect on.
 	* @param clientUI The interface type variable.
 	*/
-	public ChatClient(String loginID, String password, String host, int port, ChatIF clientUI)
+	public ChatClient(String username, String password, String host, int port, ChatIF clientUI)
 	throws IOException
 	{
 		super(host, port); //Call the superclass constructor
 		this.clientUI = clientUI;
-		this.loginID = loginID;
+		this.username = username;
 		this.password = password;
 		try{
 			openConnection();
 			//Immediately send the login information to the server
-			sendToServer("#login " + loginID + " " + password);
+			sendToServer("#login " + username + " " + password);
 		}
 		catch(IOException e){
 			clientUI.display("Cannot open connection. Awaiting command.");
@@ -152,7 +152,7 @@ public class ChatClient extends AbstractClient
 				{
 					openConnection();
 					//resend the login information
-					sendToServer("#login " + loginID);
+					sendToServer("#login " + username + " " + password);
 				}
 				catch(IOException e) {
 					clientUI.display("Unable to establish a" +
@@ -161,7 +161,7 @@ public class ChatClient extends AbstractClient
 				}
 			}
 		}
-		//the login command with loginid
+		//the login command with username
 		else if(command.startsWith("#login ")){
 			//cannot login if already logged on
 			if(isConnected()){
@@ -169,10 +169,10 @@ public class ChatClient extends AbstractClient
 			}
 			else{
 				try{
-				String newloginID = command.substring(7, command.length());
-				loginID = newloginID;
+				String newUsername = command.substring(7, command.length());
+				username = newUsername;
 				openConnection();
-				sendToServer("#login " + loginID);
+				sendToServer("#login " + username + " " + password);
 				}
 				catch(IOException e){
 					clientUI.display("Unable to establish a" +
