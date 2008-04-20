@@ -221,38 +221,101 @@ public class ChatClient extends AbstractClient
 				}
 			}
 		}
-		
+
 		//check for private message command
 		//first implementation on 4/15 by seth schwiethale
 		else if(command.startsWith("#private ")){
-			doPM(command);
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
+			}
+			else{
+				doPM(command);
+			}
 		}
-		
+
 		//channel command
 		//first implementation on 4/16 by james crosetto
 		else if (command.startsWith("#channel ")){
-			try{
-				sendToServer(command);
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
 			}
-			catch(IOException e){
-				clientUI.display("Unable to send message to server.");
+			else{
+				try{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
 			}
 		}
 		//forward command
-		//first implementation on 4/18
+		//first implementation on 4/18 by cory
 		else if (command.startsWith("#forward ")){
-			try{
-				sendToServer(command);
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
 			}
-			catch(IOException e){
-				clientUI.display("Unable to send message to server.");
+			else{
+				try{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
+			}
+
+		}
+		//forward command
+		//first implementation on 4/19 by cory
+		else if (command.startsWith("#block ")){
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
+			}
+			else{
+				try{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
+			}
+
+		}
+		//change password on the server
+		//first implementation on 4/19 by Cory
+		else if(command.startsWith("#setpassword ")){
+			//cannot set password if not connected
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
+			}
+			else{
+				try
+				{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
 			}
 		}
-		
+		//give the user help with the commands
+		//Added on 4/20 by Cory
+		else if(command.startsWith("#help ")){
+			commandHelp(command);
+		}
+
 		//catch anything that starts with #, but isnt a command
 		else{
 			clientUI.display("Invalid command");
+			clientUI.display("Please use #help for command help");
 		}
+		
+	}
+	/**
+	 * Method that helps the User with the various commands.
+	 * Added 4/20 by Cory Stevens
+	 * @param command The command that contains the requested help
+	 */
+	private void commandHelp(String command){
 		
 	}
 	
