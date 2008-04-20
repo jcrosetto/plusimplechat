@@ -224,13 +224,23 @@ public class ChatClient extends AbstractClient
 		
 		//check for private message command
 		//first implementation on 4/15 by seth schwiethale
-		else if(command.startsWith("#private")){
+		else if(command.startsWith("#private ")){
 			doPM(command);
 		}
 		
 		//channel command
 		//first implementation on 4/16 by james crosetto
-		else if (command.startsWith("#channel")){
+		else if (command.startsWith("#channel ")){
+			try{
+				sendToServer(command);
+			}
+			catch(IOException e){
+				clientUI.display("Unable to send message to server.");
+			}
+		}
+		//forward command
+		//first implementation on 4/18
+		else if (command.startsWith("#forward ")){
 			try{
 				sendToServer(command);
 			}

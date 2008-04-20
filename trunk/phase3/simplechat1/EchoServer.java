@@ -10,7 +10,9 @@
 */
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
+import java.security.*;
 
 import ocsf.server.*;
 import common.*;
@@ -85,13 +87,20 @@ public class EchoServer extends AbstractServer
 			
 		}
 		//check for private message not to be sent to all clients
+		//added 4/15 by seth
 		else if(tempMsg.startsWith("#private ")){
-			SendPrvtMsg(tempMsg, client);
+			sendPrvtMsg(tempMsg, client);
 		}
 		//change channel
 		//first implementation 4/16 by james crosetto
 		else if(tempMsg.startsWith("#channel ")){
 			changeChannel(tempMsg, client);
+			
+		}
+		//forward messages
+		//added 4/16 by Cory Stevens
+		else if(tempMsg.startsWith("#forward ")){
+			forwardingSetup(tempMsg, client);
 			
 		}
 		//regular messages
@@ -132,7 +141,6 @@ public class EchoServer extends AbstractServer
 			//client is not a new user
 			else{
 				String tempPassword = userInfo.get(username);
-				System.out.println(tempPassword);
 				//compare stored password to connecting users password
 				if(tempPassword.equals(password)){
 					try{
@@ -193,7 +201,7 @@ public class EchoServer extends AbstractServer
 	 * @param client
 	 * @author seth schwiethale
 	 */
-	private void SendPrvtMsg(String tempMsg, ConnectionToClient client) {
+	private void sendPrvtMsg(String tempMsg, ConnectionToClient client) {
 		StringTokenizer msgData = new StringTokenizer(tempMsg);
 		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient clientTo;
@@ -223,6 +231,7 @@ public class EchoServer extends AbstractServer
 				if(((clientTo.getInfo("username")).equals(recipient))){
 					clientTo.sendToClient("PM from " + client.getInfo("username")+": "+toSend);
 					serverUI.display(client.getInfo("username")+" said,'"+toSend+"' to "+clientTo.getInfo("username"));
+					forwardMessage(clientTo, toSend);
 					return;
 				}
 			}
@@ -236,7 +245,7 @@ public class EchoServer extends AbstractServer
 	/**
 	 * Separate method for Server sent Private Messages.
 	 * added because of difference with SendPrivMsg parameters
-	 * -tag author:a:"Seth Schwiethale"
+	 * @author Seth Schwiethale
 	 * @version 3 04/16/08
 	 * @date 04/
 	 * @param tempMsg
@@ -347,18 +356,133 @@ public class EchoServer extends AbstractServer
 		}
 	}
 	/**
+	 * Method that sets up forwarding to a specific user.
+	 * Added 4/19
+	 * @param msg The msg containing the user to forward to
+	 * @param client The Client that is setting up the forwarding
+	 * @author cory stevens
+	 */
+	private void forwardingSetup(String msg, ConnectionToClient client){
+		String recipient = "";
+		Thread[] clientThreadList = getClientConnections();
+		ConnectionToClient clientTo;
+		
+		String[] parsedString = msg.split(" ");
+		recipient = parsedString[1];
+		
+		try {
+			//do not allow user to forward to themselves
+			if(client.getInfo("username").equals(recipient)){
+				client.sendToClient("You may not forward messages to yourself.");
+				return;
+			}
+			//try to find recipient in clients and then send message
+			for(int i = 0; i<clientThreadList.length;i++){
+				clientTo = (ConnectionToClient) clientThreadList[i];
+				if(((clientTo.getInfo("username")).equals(recipient))){
+					clientTo.sendToClient("User " + client.getInfo("username") + 
+							" is now forwarding messages to you.");
+					storeForwardingInfo(client, clientTo);
+					return;
+				}
+			}
+		} catch (IOException e) {}
+		
+		
+	}
+	/**
+	 * Method to store the forwarding info for each user involved in the forwarding.
+	 * Added 4/19
+	 * @param fromClient The client that is initiating the forwarding
+	 * @param toClient The client that is receiving the forward
+	 * @author Cory Stevens
+	 * 
+	 */
+	private void storeForwardingInfo(ConnectionToClient fromClient, ConnectionToClient toClient){
+		ArrayList<String> forwardTo;
+		ArrayList<String> forwardFrom;
+		
+		if(fromClient.getInfo("forwardTo") == null){
+			forwardTo = new ArrayList<String>();
+			forwardTo.add((String)toClient.getInfo("username"));
+		}
+		else{
+			ArrayList<String> tempArrayList = (ArrayList<String>) fromClient.getInfo("forwardTo");
+			tempArrayList.add((String)toClient.getInfo("username"));
+			forwardTo = new ArrayList<String>(tempArrayList);
+		}
+		if(toClient.getInfo("forwardFrom") == null){
+			forwardFrom = new ArrayList<String>();
+			forwardFrom.add((String)fromClient.getInfo("username"));
+		}
+		else{
+			ArrayList<String> tempArrayList2 = (ArrayList<String>)toClient.getInfo("forwardFrom");
+			tempArrayList2.add((String)fromClient.getInfo("username"));
+			forwardFrom = new ArrayList<String>(tempArrayList2);
+		}
+		
+		fromClient.setInfo("forwardTo", forwardTo);
+		toClient.setInfo("forwardFrom", forwardFrom);
+	}
+	/**
+	 * Method that will forward messages to their recipients 
+	 * @param fromClient The client that is forwarding the message
+	 * @param msg The message that is being forwarded
+	 * @author cory stevens
+	 */
+	private void forwardMessage(ConnectionToClient fromClient, String msg){
+		Thread[] clientThreadList = getClientConnections();
+		ConnectionToClient clientTo;
+		//if the fromClient does not have anyone to forward to return
+		if(fromClient.getInfo("forwardTo") == null){
+			return;
+		}
+		ArrayList<String> recipients;
+		recipients = new ArrayList<String>((ArrayList<String>)fromClient.getInfo("forwardTo"));
+
+	    int n = recipients.size();
+	    for(int i = 0; i < n ; i++){
+	    	String recipient = recipients.get(i);
+			//try to find recipient in clients and then send message
+			for(int j = 0; j<clientThreadList.length;j++){
+				clientTo = (ConnectionToClient) clientThreadList[j];
+				if(((clientTo.getInfo("username")).equals(recipient))){
+					try {
+						clientTo.sendToClient("Forward from " + fromClient.getInfo("username")+": "+msg);
+					} catch (IOException e) {}
+					serverUI.display(fromClient.getInfo("username")+" said,'"+msg+"' to "+clientTo.getInfo("username"));
+					forwardMessage(clientTo, msg);
+					return;
+				}
+			}
+	    }
+	    
+	    
+		
+	}
+	
+	/**
 	 * Method that that will take the userInfo HashMap and output it into a text file.
 	 * Added on 4/18
 	 * @author Cory Stevens
 	 */
 	private void outputUserInfo(){
 		Iterator<Map.Entry<String, String>> it = userInfo.entrySet().iterator();
-		while (it.hasNext()) {
-			Map.Entry<String,String> entry = (Map.Entry<String,String>) it.next();
-			String key = (String) entry.getKey();
-			String value = (String) entry.getValue();
-			System.out.println("Username: " + key + " Password: " + value);
-		}
+
+		try {
+			BufferedWriter writer = new BufferedWriter(new FileWriter("userInfo.txt"));
+
+			while (it.hasNext()) {
+				Map.Entry<String,String> entry = (Map.Entry<String,String>) it.next();
+				String key = (String) entry.getKey();
+				String value = (String) entry.getValue();
+				writer.write(key + "\t" + value);
+				writer.newLine();
+			}
+			writer.close();
+		} 
+		catch (IOException e) {}
+
 	}
 	
 	/**
@@ -368,7 +492,20 @@ public class EchoServer extends AbstractServer
 	 */
 	private void inputUserInfo(){
 		
-		
+        try {
+			BufferedReader reader = new BufferedReader(new FileReader("userInfo.txt"));
+
+			//... Loop as long as there are input lines.
+			String line = null;
+			while ((line=reader.readLine()) != null) {
+				serverUI.display(line);
+				String[] parsedLine = line.split("\t");
+				userInfo.put(parsedLine[0], parsedLine[1]);
+			}
+			reader.close();
+		} 
+        catch (FileNotFoundException e) {} 
+		catch (IOException e) {}
 	}
 	
 	/**
@@ -395,6 +532,7 @@ public class EchoServer extends AbstractServer
 		//userInfo.put("password", password);
 		
 	}
+	
 
 	/**
 	* This method is called when the server starts listening for connections
@@ -413,18 +551,22 @@ public class EchoServer extends AbstractServer
 	}
 	
 	/**
-	* This method is called each time a new client connection is accepted
-	*
+	* This method is called each time a new client connection is accepted.
+	* On 4/18 Cory added a check for null username for users that didn't 
+	* fully connect.
 	* @param client the connection connected to the client.
 	*/
 	public void clientConnected(ConnectionToClient client) {
-		serverUI.display("" + client + " has connected");
+		//added 4/18
+		if(client.getInfo("username") != null){
+			serverUI.display("" + client + " has connected");
+		}
 	}
 	
 	/**
 	* This method is called each time a client disconnects.
 	* On 4/18 Cory added a check for null username for users that didn't
-	* full connect.  For example if a user connects but uses the wrong password.
+	* fully connect.  For example if a user connects but uses the wrong password.
 	* @param client the connection with the client.
 	*/
 	public void clientDisconnected(ConnectionToClient client) {
@@ -439,7 +581,7 @@ public class EchoServer extends AbstractServer
 	* thread,
 	*
 	* On 4/18 Cory added a check for null username for users that didn't
-	* full connect.  For example if a user connects but doesn't use a password.
+	* fully connect.  For example if a user connects but doesn't use a password.
 	* @param client the client that raised the exception.
 	* @param Throwable the exception thrown.
 	*/
@@ -561,6 +703,9 @@ public class EchoServer extends AbstractServer
 		}
 		else if(command.startsWith("#outputUsers")){
 			outputUserInfo();
+		}
+		else if(command.startsWith("#inputUsers")){
+			inputUserInfo();
 		}
 		else{
 			serverUI.display("Invalid command");
