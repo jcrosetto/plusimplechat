@@ -124,8 +124,16 @@ public class ClientConsole implements ChatIF
 		//set the username
 		username = args[0];
 		//set the password
-		//**************Need check here****************
-		password = args[1];
+		//Added 4/18 by Cory Stevens
+		try {
+			password = args[1];
+		} 
+		catch (ArrayIndexOutOfBoundsException e1) {
+			System.out.println("You must specify a password!");
+			System.out.println("Usage:");
+			System.out.println("ClientConsole username password [host port]");
+			System.exit(1);
+		}
 		//try/catch block to set defaults
 		try
 		{
@@ -136,6 +144,12 @@ public class ClientConsole implements ChatIF
 		{
 			host = "localhost";
 			port = DEFAULT_PORT;
+			//Check where the exception is and output a message
+			//Added 4/18 by Cory
+			if(e.equals(2))
+				System.out.println("Using default host of 'localhost' ");
+			else
+				System.out.println("Using default port of '5432' ");
 		}
 		//catch nonnumbers in port
 		catch(NumberFormatException e){
