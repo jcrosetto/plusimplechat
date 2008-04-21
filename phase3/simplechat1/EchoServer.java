@@ -246,7 +246,7 @@ public class EchoServer extends AbstractServer
 						}
 					}
 					clientTo.sendToClient("PM from " + client.getInfo("username")+": "+toSend);
-					serverUI.display(client.getInfo("username")+" said,'"+toSend+"' to "+clientTo.getInfo("username"));
+					//serverUI.display(client.getInfo("username")+" said,'"+toSend+"' to "+clientTo.getInfo("username"));
 					forwardMessage(clientTo, toSend, new ArrayList<String>());
 					return;
 				}
