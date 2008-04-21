@@ -264,9 +264,25 @@ public class ChatClient extends AbstractClient
 			}
 
 		}
-		//forward command
+		//block command
 		//first implementation on 4/19 by cory
 		else if (command.startsWith("#block ")){
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
+			}
+			else{
+				try{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
+			}
+
+		}
+		//unblock command
+		//first implementation on 4/19 by cory
+		else if (command.startsWith("#unblock")){
 			if(!isConnected()){
 				clientUI.display("You must be logged on to do that");
 			}
