@@ -116,6 +116,18 @@ public class EchoServer extends AbstractServer
 			unblockUser(tempMsg, client);
 
 		}
+		//unblock users
+		//added 4/19 by Cory Stevens
+		else if(tempMsg.startsWith("#whoiblock")){
+			whoIBlock(client);
+
+		}
+		//unblock users
+		//added 4/19 by Cory Stevens
+		else if(tempMsg.startsWith("#whoblocksme")){
+			whoBlocksMe(client);
+
+		}
 		//remove forwarding to users
 		//added 4/20 by James Crosetto
 		else if(tempMsg.startsWith("#unforward")){
@@ -292,7 +304,9 @@ public class EchoServer extends AbstractServer
 			}
 			//check if the user exists
 			if(userInfo.containsKey(recipient)){
+				client.sendToClient("Messages from " + recipient + " will be blocked");
 				storeBlockingInfo(client, recipient);
+				processForwardBlock(client, recipient);
 			}
 			//recipient was not found in connected clients
 			else{
@@ -300,6 +314,44 @@ public class EchoServer extends AbstractServer
 			}
 		} catch (IOException e) {}
 	}
+	
+	/**
+	 * Method that cancels any blocking that is established between the two users
+	 * @param blockingClient The client that is initiating the block
+	 * @param blockedClient The client that is being blocked
+	 */
+	private void processForwardBlock(ConnectionToClient blockingClient, String blockedClient){
+		
+		Thread[] clientThreadList = getClientConnections();
+		ConnectionToClient clientTo = null;
+		
+		for(int i = 0; i<clientThreadList.length;i++){
+			clientTo = (ConnectionToClient) clientThreadList[i];
+			if(((clientTo.getInfo("username")).equals(blockedClient))){
+				break;
+			}
+		}
+		//if blockedClient doesn't forward to anyone return
+		if(clientTo.getInfo("forwardTo") == null || ((ArrayList<String>)clientTo.getInfo("forwardTo")).isEmpty() ){
+			return;
+		}
+		//ArrayList of the blockedClient's forwarding
+		ArrayList<String> blockedForward = (ArrayList<String>) clientTo.getInfo("forwardTo");
+		//check if blockedClient is forwarding to blockingClient
+		if(blockedForward.contains(blockingClient.getInfo("username"))){
+			try {
+				blockingClient.sendToClient("Forwarding of messages from " + blockedClient + " to you has been terminated");
+				//remove blockingClient from blockedClient's block list
+				blockedForward.remove(blockingClient.getInfo("username"));
+				clientTo.sendToClient("Forwarding to " + blockingClient.getInfo("username") + " has been canceled because "+
+						blockingClient.getInfo("username")+ " is blocking messages from you");
+			} 
+			catch (IOException e) {}
+			
+		}
+		
+	}
+	
 	/**
 	 * Method to store the blocking info for each user involved in the blocking.
 	 * Added 4/19
@@ -365,7 +417,6 @@ public class EchoServer extends AbstractServer
 		//if the unblock command doesnt specify a user, remove all blocked users
 		else{
 			try {
-				int i = 0;
 				Iterator it = blockedUsers.iterator();
 				while(it.hasNext()) {
 					client.sendToClient("Messages from " + it.next() + " will now be displayed.");
@@ -376,6 +427,60 @@ public class EchoServer extends AbstractServer
 		}
 
 		client.setInfo("blocking", blockedUsers);
+	}
+	
+	/**
+	 * Method that displays to the user the users that they are blocking.
+	 * Added 4/20
+	 * @param client The client that wants to know who they block.
+	 * @author cory stevens
+	 * 
+	 */
+	private void whoIBlock(ConnectionToClient client){
+		ArrayList<String> blockedUsers;
+		
+		if(client.getInfo("blocking") == null || ((ArrayList<String>)client.getInfo("blocking")).isEmpty() ){
+			try {
+				client.sendToClient("No blocking is in effect.");
+			} 
+			catch (IOException e) {}
+			return;
+		}
+		blockedUsers = new ArrayList((ArrayList<String>)client.getInfo("blocking")); 
+		try {
+			Iterator it = blockedUsers.iterator();
+			while(it.hasNext()) {
+				client.sendToClient("Messages from " + it.next() + " are blocked.");
+			}
+		} 
+		catch (IOException e) {}
+	}
+	/**
+	 * Method that displays to the user who is blocking them.
+	 * Added 4/20
+	 * @param client The client that wishes to know who is blocking him
+	 * @author cory stevens
+	 */
+	private void whoBlocksMe(ConnectionToClient client){
+		Thread[] clientThreadList = getClientConnections();
+		ConnectionToClient tempClient;
+		ArrayList<String> blockedUsers = new ArrayList<String>();
+		String user = (String)client.getInfo("username");
+
+		for(int i = 0; i<clientThreadList.length;i++){
+			tempClient = (ConnectionToClient) clientThreadList[i];
+			if((tempClient.getInfo("blocking")) != null)
+				if(((ArrayList<String>)(tempClient.getInfo("blocking"))).contains(user)){
+					blockedUsers.add((String)tempClient.getInfo("username"));
+				}
+		}
+		try {
+			Iterator it = blockedUsers.iterator();
+			while(it.hasNext()) {
+				client.sendToClient("Messages to " + it.next() + " are blocked.");
+			}
+		}
+		catch (IOException e) {}
 	}
 
 	/**
@@ -528,6 +633,7 @@ public class EchoServer extends AbstractServer
 					}
 					clientTo.sendToClient("User " + client.getInfo("username") + 
 					" is now forwarding messages to you.");
+					client.sendToClient("You are now forwarding messages to " + recipient);
 					storeForwardingInfo(client, clientTo);
 					return;
 				}
@@ -559,18 +665,8 @@ public class EchoServer extends AbstractServer
 			tempArrayList.add((String)toClient.getInfo("username"));
 			forwardTo = new ArrayList<String>(tempArrayList);
 		}
-		if(toClient.getInfo("forwardFrom") == null){
-			forwardFrom = new ArrayList<String>();
-			forwardFrom.add((String)fromClient.getInfo("username"));
-		}
-		else{
-			ArrayList<String> tempArrayList2 = (ArrayList<String>)toClient.getInfo("forwardFrom");
-			tempArrayList2.add((String)fromClient.getInfo("username"));
-			forwardFrom = new ArrayList<String>(tempArrayList2);
-		}
 
 		fromClient.setInfo("forwardTo", forwardTo);
-		toClient.setInfo("forwardFrom", forwardFrom);
 	}
 	/**
 	 * Method that will forward messages to their recipients 
