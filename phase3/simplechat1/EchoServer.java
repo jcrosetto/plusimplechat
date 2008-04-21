@@ -58,7 +58,7 @@ public class EchoServer extends AbstractServer
 		this.serverUI = serverUI; 
 		userInfo = new HashMap<String, String>();
 		inputUserInfo();
-		userInfo.put("server", "server" );
+		addNewUser("server", "server" );
 	}
 
 
@@ -794,7 +794,6 @@ public class EchoServer extends AbstractServer
 			//Loop as long as there are input lines.
 			String line = null;
 			while ((line=reader.readLine()) != null) {
-				serverUI.display(line);
 				String[] parsedLine = line.split("\t");
 				userInfo.put(parsedLine[0], parsedLine[1]);
 			}
