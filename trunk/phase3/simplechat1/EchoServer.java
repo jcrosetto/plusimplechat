@@ -57,6 +57,7 @@ public class EchoServer extends AbstractServer
 		super(port);
 		this.serverUI = serverUI; 
 		userInfo = new HashMap<String, String>();
+		inputUserInfo();
 		userInfo.put("server", "server" );
 	}
 
@@ -210,6 +211,7 @@ public class EchoServer extends AbstractServer
 	private void addNewUser(String username, String password){
 
 		userInfo.put(username, password);
+		outputUserInfo();
 
 	}
 
