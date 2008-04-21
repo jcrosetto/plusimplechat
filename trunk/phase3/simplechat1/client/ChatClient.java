@@ -313,6 +313,38 @@ public class ChatClient extends AbstractClient
 			}
 
 		}
+		//whoiblock command
+		//first implementation on 4/20 by cory
+		else if (command.startsWith("#whoiblock")){
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
+			}
+			else{
+				try{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
+			}
+
+		}
+		//unblock command
+		//first implementation on 4/20 by cory
+		else if (command.startsWith("#whoblocksme")){
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
+			}
+			else{
+				try{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
+			}
+
+		}
 		//change password on the server
 		//first implementation on 4/19 by Cory
 		else if(command.startsWith("#setpassword ")){
