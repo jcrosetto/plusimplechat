@@ -247,7 +247,7 @@ public class EchoServer extends AbstractServer
 					}
 					clientTo.sendToClient("PM from " + client.getInfo("username")+": "+toSend);
 					serverUI.display(client.getInfo("username")+" said,'"+toSend+"' to "+clientTo.getInfo("username"));
-					forwardMessage(clientTo, toSend);
+					forwardMessage(clientTo, toSend, new ArrayList<String>());
 					return;
 				}
 			}
@@ -539,7 +539,7 @@ public class EchoServer extends AbstractServer
 	 * @param msg The message that is being forwarded
 	 * @author cory stevens
 	 */
-	private void forwardMessage(ConnectionToClient fromClient, String msg){
+	private void forwardMessage(ConnectionToClient fromClient, String msg, ArrayList<String> sent){
 		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient clientTo;
 		//if the fromClient does not have anyone to forward to return
@@ -555,11 +555,12 @@ public class EchoServer extends AbstractServer
 			//try to find recipient in clients and then send message
 			for(int j = 0; j<clientThreadList.length;j++){
 				clientTo = (ConnectionToClient) clientThreadList[j];
-				if(((clientTo.getInfo("username")).equals(recipient))){
+				if(!sent.contains(recipient) && ((clientTo.getInfo("username")).equals(recipient))){
 					try {
 						clientTo.sendToClient("Forward from " + fromClient.getInfo("username")+": "+msg);
 					} catch (IOException e) {}
-					forwardMessage(clientTo, msg);
+					sent.add(recipient);
+					forwardMessage(clientTo, msg, sent);
 					return;
 				}
 			}
