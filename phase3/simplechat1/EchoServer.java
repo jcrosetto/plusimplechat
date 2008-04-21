@@ -549,6 +549,8 @@ public class EchoServer extends AbstractServer
 		ArrayList<String> recipients;
 		recipients = new ArrayList<String>((ArrayList<String>)fromClient.getInfo("forwardTo"));
 
+		sent.add((String)fromClient.getInfo("username"));
+		
 		int n = recipients.size();
 		for(int i = 0; i < n ; i++){
 			String recipient = recipients.get(i);
@@ -559,7 +561,6 @@ public class EchoServer extends AbstractServer
 					try {
 						clientTo.sendToClient("Forward from " + fromClient.getInfo("username")+": "+msg);
 					} catch (IOException e) {}
-					sent.add(recipient);
 					forwardMessage(clientTo, msg, sent);
 					return;
 				}
