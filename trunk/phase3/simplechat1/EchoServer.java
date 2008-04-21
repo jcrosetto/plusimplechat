@@ -464,6 +464,7 @@ public class EchoServer extends AbstractServer
 		String recipient = "";
 		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient clientTo;
+		ArrayList<String> blockedUsers;
 
 		String[] parsedString = msg.split(" ");
 		recipient = parsedString[1];
@@ -478,6 +479,14 @@ public class EchoServer extends AbstractServer
 			for(int i = 0; i<clientThreadList.length;i++){
 				clientTo = (ConnectionToClient) clientThreadList[i];
 				if(((clientTo.getInfo("username")).equals(recipient))){
+					if(clientTo.getInfo("blocking")!=null){
+						blockedUsers = new ArrayList((ArrayList<String>)clientTo.getInfo("blocking"));
+						//make sure recipient isn't blocking the sender
+						if(blockedUsers.contains(client.getInfo("username"))){
+							client.sendToClient("Cannot forward. "+clientTo.getInfo("username")+" is blocking you!");
+							return;
+						}
+					}
 					clientTo.sendToClient("User " + client.getInfo("username") + 
 					" is now forwarding messages to you.");
 					storeForwardingInfo(client, clientTo);
