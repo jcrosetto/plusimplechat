@@ -311,9 +311,33 @@ public class EchoServer extends AbstractServer
 
 	/**
 	 * Method that unblocks a user
+	 * @param msg The message containing the user to unblock
+	 * @param client The client that is unblocking the user
+	 * @author cory stevens
 	 * 
 	 */
-	//private void 
+	private void unblockUser(String msg, ConnectionToClient client){
+		
+		ArrayList<String> blockedUsers;
+		String[] parsedString = msg.split(" ");
+		
+		if(client.getInfo("blocking") == null){
+			try {
+				client.sendToClient("You are not blocking any users");
+			} 
+			catch (IOException e) {}
+			return;
+		}
+		
+		blockedUsers = new ArrayList((ArrayList<String>)client.getInfo("blocking")); 
+		if(!blockedUsers.contains(parsedString[1])){
+			try {
+				client.sendToClient("You are not blocking any users");
+			} 
+			catch (IOException e) {}
+		}
+		
+	}
 
 	/**
 	 * Separate method for Server sent Private Messages.
