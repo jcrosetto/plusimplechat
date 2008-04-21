@@ -308,13 +308,13 @@ public class EchoServer extends AbstractServer
 
 		fromClient.setInfo("blocking", forwardTo);
 	}
-	
+
 	/**
 	 * Method that unblocks a user
 	 * 
 	 */
 	//private void 
-	
+
 	/**
 	 * Separate method for Server sent Private Messages.
 	 * added because of difference with SendPrivMsg parameters
@@ -802,7 +802,7 @@ public class EchoServer extends AbstractServer
 			serverUI.display("Please use #help for command help");
 		}
 	}
-	
+
 	/**
 	 * Overloaded method to send a message to all clients on the same channel as the 
 	 * client sending the message. 
@@ -812,21 +812,30 @@ public class EchoServer extends AbstractServer
 	 * @author James Crosetto
 	 */
 	public void sendToAllClients(Object msg, ConnectionToClient client){
-		
+
 		Thread[] clientThreadList = getClientConnections();
 
-	    for (int i=0; i<clientThreadList.length; i++)
-	    {
-	      try
-	      {
-	    	  ConnectionToClient clientTemp = (ConnectionToClient)clientThreadList[i];
-	    	  if(client.getInfo("channel").equals(clientTemp.getInfo("channel"))){
-	    		  clientTemp.sendToClient(msg);
-	    	  }
-	        
-	      }
-	      catch (Exception ex) {}
-	    }
+		for (int i=0; i<clientThreadList.length; i++)
+		{
+			try
+			{
+				ArrayList<String> blockedUsers;
+				ConnectionToClient clientTemp = (ConnectionToClient)clientThreadList[i];
+				if(client.getInfo("channel").equals(clientTemp.getInfo("channel"))){
+					if(clientTemp.getInfo("blocking")!=null){
+						blockedUsers = new ArrayList((ArrayList<String>)clientTemp.getInfo("blocking"));
+						//make sure recipient isn't blocking the sender
+						if(blockedUsers.contains(client.getInfo("username"))){
+							return;
+						}//if user on channel is blocking sender
+					}//if blocking list is not null
+					
+					clientTemp.sendToClient(msg);
+				}//if client is on senders channel
+
+			}
+			catch (Exception ex) {}
+		}
 	}
 
 }
