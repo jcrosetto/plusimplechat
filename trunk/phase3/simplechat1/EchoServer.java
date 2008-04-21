@@ -12,7 +12,6 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-import java.security.*;
 
 import ocsf.server.*;
 import common.*;
@@ -234,6 +233,7 @@ public class EchoServer extends AbstractServer
 	 * @param client
 	 * @author seth schwiethale
 	 */
+	@SuppressWarnings("unchecked")
 	private void sendPrvtMsg(String tempMsg, ConnectionToClient client) {
 		StringTokenizer msgData = new StringTokenizer(tempMsg);
 		Thread[] clientThreadList = getClientConnections();
@@ -320,6 +320,7 @@ public class EchoServer extends AbstractServer
 	 * @param blockingClient The client that is initiating the block
 	 * @param blockedClient The client that is being blocked
 	 */
+	@SuppressWarnings("unchecked")
 	private void processForwardBlock(ConnectionToClient blockingClient, String blockedClient){
 		
 		Thread[] clientThreadList = getClientConnections();
@@ -360,6 +361,7 @@ public class EchoServer extends AbstractServer
 	 * @author Cory Stevens
 	 * 
 	 */
+	@SuppressWarnings("unchecked")
 	private void storeBlockingInfo(ConnectionToClient fromClient, String toClient){
 		ArrayList<String> forwardTo;
 
@@ -384,6 +386,7 @@ public class EchoServer extends AbstractServer
 	 * @author cory stevens
 	 * 
 	 */
+	@SuppressWarnings("unchecked")
 	private void unblockUser(String msg, ConnectionToClient client){
 		
 		ArrayList<String> blockedUsers;
@@ -436,6 +439,7 @@ public class EchoServer extends AbstractServer
 	 * @author cory stevens
 	 * 
 	 */
+	@SuppressWarnings("unchecked")
 	private void whoIBlock(ConnectionToClient client){
 		ArrayList<String> blockedUsers;
 		
@@ -461,6 +465,7 @@ public class EchoServer extends AbstractServer
 	 * @param client The client that wishes to know who is blocking him
 	 * @author cory stevens
 	 */
+	@SuppressWarnings("unchecked")
 	private void whoBlocksMe(ConnectionToClient client){
 		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient tempClient;
@@ -604,6 +609,7 @@ public class EchoServer extends AbstractServer
 	 * @param client The Client that is setting up the forwarding
 	 * @author cory stevens
 	 */
+	@SuppressWarnings("unchecked")
 	private void forwardingSetup(String msg, ConnectionToClient client){
 		String recipient = "";
 		Thread[] clientThreadList = getClientConnections();
@@ -652,9 +658,9 @@ public class EchoServer extends AbstractServer
 	 * @author Cory Stevens
 	 * 
 	 */
+	@SuppressWarnings("unchecked")
 	private void storeForwardingInfo(ConnectionToClient fromClient, ConnectionToClient toClient){
 		ArrayList<String> forwardTo;
-		ArrayList<String> forwardFrom;
 
 		if(fromClient.getInfo("forwardTo") == null){
 			forwardTo = new ArrayList<String>();
@@ -675,6 +681,7 @@ public class EchoServer extends AbstractServer
 	 * @param sent The list of users the message has been forwarded to
 	 * @author cory stevens
 	 */
+	@SuppressWarnings("unchecked")
 	private void forwardMessage(ConnectionToClient fromClient, String msg, ArrayList<String> sent){
 		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient clientTo;
@@ -711,9 +718,10 @@ public class EchoServer extends AbstractServer
 	 * @author james crosetto
 	 * 
 	 */
+	@SuppressWarnings("unchecked")
 	private void unforwardUser(String msg, ConnectionToClient client){
 		
-		ArrayList<String> forwardedUsers, forwardedFromUsers;
+		ArrayList<String> forwardedUsers;
 		String[] parsedString = msg.split(" ");
 		
 		if(client.getInfo("forwardTo") == null || ((ArrayList<String>)client.getInfo("forwardTo")).isEmpty() ){
@@ -744,7 +752,6 @@ public class EchoServer extends AbstractServer
 		//if the unforward command doesnt specify a user, remove all forwarded users
 		else{
 			try {
-				int i = 0;
 				Iterator it = forwardedUsers.iterator();
 				while(it.hasNext()) {
 					client.sendToClient("Messages are no longer forwarded to " + it.next());
@@ -1030,6 +1037,7 @@ public class EchoServer extends AbstractServer
 	 * @param client The client sending the message
 	 * @author James Crosetto
 	 */
+	@SuppressWarnings("unchecked")
 	public void sendToAllClients(Object msg, ConnectionToClient client){
 
 		Thread[] clientThreadList = getClientConnections();
