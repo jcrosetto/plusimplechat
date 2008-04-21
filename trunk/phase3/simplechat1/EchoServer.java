@@ -113,7 +113,7 @@ public class EchoServer extends AbstractServer
 		else{
 			serverUI.display("Message received: " + msg + " from " 
 					+ client.getInfo("username"));
-			this.sendToAllClients(client.getInfo("username")+": "+msg);
+			this.sendToAllClients(client.getInfo("username")+": "+msg, client);
 		}
 
 	}
@@ -173,7 +173,8 @@ public class EchoServer extends AbstractServer
 			//following added 4/16 by james crosetto
 			client.setInfo("channel", "default");
 			try{
-				client.sendToClient("You are now connected to channel: default");
+				sendToChannel(client.getInfo("username") + 
+						" has connected to channel: default", "default");
 			}
 			catch(Exception e){}
 		}
@@ -318,8 +319,9 @@ public class EchoServer extends AbstractServer
 					}
 					else{
 						client.setInfo("channel", channel);
-						client.sendToClient("You are now connected to channel: " +
-								channel);
+						sendToChannel(client.getInfo("username") + 
+								" has connected to channel: " +
+								channel, channel);
 					}
 				}
 				else{
@@ -739,7 +741,32 @@ public class EchoServer extends AbstractServer
 			serverUI.display("Invalid command");
 			serverUI.display("Please use #help for command help");
 		}
+	}
+	
+	/**
+	 * Overloaded method to send a message to all clients on the same channel as the 
+	 * client sending the message. 
+	 * Added 4/20 
+	 * @param msg The message to be sent
+	 * @param client The client sending the message
+	 * @author James Crosetto
+	 */
+	public void sendToAllClients(Object msg, ConnectionToClient client){
+		
+		Thread[] clientThreadList = getClientConnections();
 
+	    for (int i=0; i<clientThreadList.length; i++)
+	    {
+	      try
+	      {
+	    	  ConnectionToClient clientTemp = (ConnectionToClient)clientThreadList[i];
+	    	  if(client.getInfo("channel").equals(clientTemp.getInfo("channel"))){
+	    		  clientTemp.sendToClient(msg);
+	    	  }
+	        
+	      }
+	      catch (Exception ex) {}
+	    }
 	}
 
 }
