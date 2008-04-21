@@ -115,6 +115,12 @@ public class EchoServer extends AbstractServer
 			unblockUser(tempMsg, client);
 
 		}
+		//remove forwarding to users
+		//added 4/20 by James Crosetto
+		else if(tempMsg.startsWith("#unforward")){
+			unforwardUser(tempMsg, client);
+
+		}
 		//regular messages
 		else{
 			serverUI.display("Message received: " + msg + " from " 
@@ -568,6 +574,7 @@ public class EchoServer extends AbstractServer
 	 * Method that will forward messages to their recipients 
 	 * @param fromClient The client that is forwarding the message
 	 * @param msg The message that is being forwarded
+	 * @param sent The list of users the message has been forwarded to
 	 * @author cory stevens
 	 */
 	private void forwardMessage(ConnectionToClient fromClient, String msg, ArrayList<String> sent){
@@ -597,9 +604,59 @@ public class EchoServer extends AbstractServer
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Method that removes forwarding to a user
+	 * @param msg The message containing the user to unforward
+	 * @param client The client that is unforwarding another client
+	 * @author james crosetto
+	 * 
+	 */
+	private void unforwardUser(String msg, ConnectionToClient client){
+		
+		ArrayList<String> forwardedUsers, forwardedFromUsers;
+		String[] parsedString = msg.split(" ");
+		
+		if(client.getInfo("forwardTo") == null || ((ArrayList<String>)client.getInfo("forwardTo")).isEmpty() ){
+			try {
+				client.sendToClient("No forwarding is in effect.");
+			} 
+			catch (IOException e) {}
+			return;
+		}
 
+		forwardedUsers = new ArrayList((ArrayList<String>)client.getInfo("forwardTo")); 
+		//if the unforward has a user specified only remove one user
+		if(msg.startsWith("#unforward ")){
+			if(!forwardedUsers.contains(parsedString[1])){
+				try {
+					client.sendToClient("Messages have not been forwarded to " + parsedString[1]);
+				} 
+				catch (IOException e) {}
+			}
+			else{
+				forwardedUsers.remove(parsedString[1]);
+				try {
+					client.sendToClient("Messages are no longer forwarded to " + parsedString[1]);
+				} 
+				catch (IOException e) {}
+			}			
+		}
+		//if the unforward command doesnt specify a user, remove all forwarded users
+		else{
+			try {
+				int i = 0;
+				Iterator it = forwardedUsers.iterator();
+				while(it.hasNext()) {
+					client.sendToClient("Messages are no longer forwarded to " + it.next());
+				}
+				forwardedUsers.clear();
+			} 
+			catch (IOException e) {}
+		}
 
-
+		client.setInfo("forwardTo", forwardedUsers);
 	}
 
 	/**
