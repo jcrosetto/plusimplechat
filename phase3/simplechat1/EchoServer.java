@@ -229,7 +229,7 @@ public class EchoServer extends AbstractServer
 
 			//user sends a private message to the server
 			else if(recipient.equalsIgnoreCase("SERVER")){
-				serverUI.display("PRIVATE from "+client.getInfo("username")+": "+toSend);
+				//serverUI.display("PRIVATE from "+client.getInfo("username")+": "+toSend);
 				return;
 			}
 
@@ -559,7 +559,6 @@ public class EchoServer extends AbstractServer
 					try {
 						clientTo.sendToClient("Forward from " + fromClient.getInfo("username")+": "+msg);
 					} catch (IOException e) {}
-					serverUI.display(fromClient.getInfo("username")+" said,'"+msg+"' to "+clientTo.getInfo("username"));
 					forwardMessage(clientTo, msg);
 					return;
 				}
