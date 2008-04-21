@@ -109,6 +109,12 @@ public class EchoServer extends AbstractServer
 			blockUser(tempMsg, client);
 
 		}
+		//unblock users
+		//added 4/19 by Cory Stevens
+		else if(tempMsg.startsWith("#unblock")){
+			unblockUser(tempMsg, client);
+
+		}
 		//regular messages
 		else{
 			serverUI.display("Message received: " + msg + " from " 
@@ -323,22 +329,45 @@ public class EchoServer extends AbstractServer
 		ArrayList<String> blockedUsers;
 		String[] parsedString = msg.split(" ");
 		
-		if(client.getInfo("blocking") == null){
+		if(client.getInfo("blocking") == null || ((ArrayList<String>)client.getInfo("blocking")).isEmpty() ){
 			try {
-				client.sendToClient("You are not blocking any users");
+				client.sendToClient("No blocking is in effect.");
 			} 
 			catch (IOException e) {}
 			return;
 		}
-		
+
 		blockedUsers = new ArrayList((ArrayList<String>)client.getInfo("blocking")); 
-		if(!blockedUsers.contains(parsedString[1])){
+		//if the unblock has a user specified only removed one user
+		if(msg.startsWith("#unblock ")){
+			if(!blockedUsers.contains(parsedString[1])){
+				try {
+					client.sendToClient("Messages from " + parsedString[1] + " were not blocked.");
+				} 
+				catch (IOException e) {}
+			}
+			else{
+				blockedUsers.remove(parsedString[1]);
+				try {
+					client.sendToClient("Messages from " + parsedString[1] + " will now be displayed.");
+				} 
+				catch (IOException e) {}
+			}			
+		}
+		//if the unblock command doesnt specify a user, remove all blocked users
+		else{
 			try {
-				client.sendToClient("You are not blocking any users");
+				int i = 0;
+				Iterator it = blockedUsers.iterator();
+				while(it.hasNext()) {
+					client.sendToClient("Messages from " + it.next() + " will now be displayed.");
+				}
+				blockedUsers.clear();
 			} 
 			catch (IOException e) {}
 		}
-		
+
+		client.setInfo("blocking", blockedUsers);
 	}
 
 	/**
