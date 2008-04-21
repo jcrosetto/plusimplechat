@@ -212,6 +212,7 @@ public class EchoServer extends AbstractServer
 		StringTokenizer msgData = new StringTokenizer(tempMsg);
 		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient clientTo;
+		ArrayList<String> blockedUsers;
 
 		//get desired recipient and message from command
 		try{
@@ -236,6 +237,14 @@ public class EchoServer extends AbstractServer
 			for(int i = 0; i<clientThreadList.length;i++){
 				clientTo = (ConnectionToClient) clientThreadList[i];
 				if(((clientTo.getInfo("username")).equals(recipient))){
+					if(clientTo.getInfo("blocking")!=null){
+						blockedUsers = new ArrayList((ArrayList<String>)clientTo.getInfo("blocking"));
+						//make sure recipient isn't blocking the sender
+						if(blockedUsers.contains(client.getInfo("username"))){
+							client.sendToClient("Message could not be sent, "+clientTo.getInfo("username")+" is blocking you!");
+							return;
+						}
+					}
 					clientTo.sendToClient("PM from " + client.getInfo("username")+": "+toSend);
 					serverUI.display(client.getInfo("username")+" said,'"+toSend+"' to "+clientTo.getInfo("username"));
 					forwardMessage(clientTo, toSend);
@@ -243,7 +252,7 @@ public class EchoServer extends AbstractServer
 				}
 			}
 			//recipient was not found in connected clients
-			client.sendToClient("The user you specified is not connected");
+			client.sendToClient("the user you specified is not connected");
 		}
 		catch(Exception e){}
 	}
