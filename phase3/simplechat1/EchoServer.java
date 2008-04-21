@@ -106,7 +106,7 @@ public class EchoServer extends AbstractServer
 		//block users
 		//added 4/19 by Cory Stevens
 		else if(tempMsg.startsWith("#block ")){
-			forwardingSetup(tempMsg, client);
+			blockUser(tempMsg, client);
 
 		}
 		//regular messages
@@ -243,7 +243,7 @@ public class EchoServer extends AbstractServer
 				}
 			}
 			//recipient was not found in connected clients
-			client.sendToClient("the user you specified is not connected");
+			client.sendToClient("The user you specified is not connected");
 		}
 		catch(Exception e){}
 	}
@@ -254,8 +254,57 @@ public class EchoServer extends AbstractServer
 	 * @author Cory Stevens
 	 */
 	private void blockUser(String msg, ConnectionToClient client){
-		
+		String recipient = "";
+
+		String[] parsedString = msg.split(" ");
+		recipient = parsedString[1];
+
+		try {
+			//do not allow user to forward to themselves
+			if(client.getInfo("username").equals(recipient)){
+				client.sendToClient("You may not block yourself.");
+				return;
+			}
+			//check if the user exists
+			if(userInfo.containsKey(recipient)){
+				storeBlockingInfo(client, recipient);
+			}
+			//recipient was not found in connected clients
+			else{
+				client.sendToClient("The user you specified does not exist");
+			}
+		} catch (IOException e) {}
 	}
+	/**
+	 * Method to store the blocking info for each user involved in the blocking.
+	 * Added 4/19
+	 * @param fromClient The client that is initiating the blocking
+	 * @param toClient The client that is receiving the blocking
+	 * @author Cory Stevens
+	 * 
+	 */
+	private void storeBlockingInfo(ConnectionToClient fromClient, String toClient){
+		ArrayList<String> forwardTo;
+
+		if(fromClient.getInfo("blocking") == null){
+			forwardTo = new ArrayList<String>();
+			forwardTo.add(toClient);
+		}
+		else{
+			ArrayList<String> tempArrayList = (ArrayList<String>) fromClient.getInfo("blocking");
+			tempArrayList.add(toClient);
+			forwardTo = new ArrayList<String>(tempArrayList);
+		}
+
+
+		fromClient.setInfo("blocking", forwardTo);
+	}
+	
+	/**
+	 * Method that unblocks a user
+	 * 
+	 */
+	//private void 
 	
 	/**
 	 * Separate method for Server sent Private Messages.
@@ -402,6 +451,8 @@ public class EchoServer extends AbstractServer
 					return;
 				}
 			}
+			//recipient was not found in connected clients
+			client.sendToClient("The user you specified is not connected");
 		} catch (IOException e) {}
 
 
