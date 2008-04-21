@@ -31,7 +31,7 @@ public class ChatClient extends AbstractClient
 	*/
 	private ChatIF clientUI;
 	/**
-	* the username of the client
+	* The username of the client
 	*/
 	String username;
 	
@@ -299,11 +299,11 @@ public class ChatClient extends AbstractClient
 		}
 		//give the user help with the commands
 		//Added on 4/20 by Cory
-		else if(command.startsWith("#help ")){
+		else if(command.startsWith("#help")){
 			commandHelp(command);
 		}
 
-		//catch anything that starts with #, but isnt a command
+		//catch anything that starts with #, but isn't a command
 		else{
 			clientUI.display("Invalid command");
 			clientUI.display("Please use #help for command help");
@@ -312,10 +312,65 @@ public class ChatClient extends AbstractClient
 	}
 	/**
 	 * Method that helps the User with the various commands.
-	 * Added 4/20 by Cory Stevens
+	 * Added 4/20 by Cory Stevens tediously filled out by Seth Schwiethale
 	 * @param command The command that contains the requested help
 	 */
 	private void commandHelp(String command){
+		if (command.equalsIgnoreCase("#help")){
+			clientUI.display("Commands\tdescription");
+			clientUI.display("#quit\t\texit client program");
+			clientUI.display("#logoff\tdisconnect from server");
+			clientUI.display("#login\tused to connect to server");
+			clientUI.display("#gethost\treturns hostname of host you are connected to");
+			clientUI.display("#getport\treturns port number you are connected to");
+			clientUI.display("#sethost\tif you are not logged in you may specify the host to log into");
+			clientUI.display("#setport\tif you are not logged in you may specify the port number to connect to");
+			clientUI.display("#private\tsend private message to a specified user");
+			clientUI.display("#channel\tconnect to a specified chat channel");
+			clientUI.display("#forward\tforward message you recieve to another user");
+			clientUI.display("#block\tblock messages sent from specified user");
+			clientUI.display("#setpassword\tchanges password");
+			clientUI.display("#help\t\tthis menu");
+		}
+		else if(command.equalsIgnoreCase("#help #quit")){
+			clientUI.display("Usage:\t#quit");
+		}
+		else if(command.equalsIgnoreCase("#help #logoff")){
+			clientUI.display("Usage:\t#logoff");
+		}
+		else if(command.equalsIgnoreCase("#help #login")){
+			clientUI.display("Usage:\t#login");
+		}
+		else if(command.equalsIgnoreCase("#help #gethost")){
+			clientUI.display("Usage:\t#gethost");
+		}
+		else if(command.equalsIgnoreCase("#help #getport")){
+			clientUI.display("Usage:\t#getport");
+		}
+		else if(command.equalsIgnoreCase("#help #sethost")){
+			clientUI.display("Usage:\t#sethost <hostname>");
+		}
+		else if(command.equalsIgnoreCase("#help #setport")){
+			clientUI.display("Usage:\t#setport <portname>");
+		}
+		else if(command.equalsIgnoreCase("#help #private")){
+			clientUI.display("Usage:\t#private <to username> <message>");
+		}
+		else if(command.equalsIgnoreCase("#help #channel")){
+			clientUI.display("Usage:\t#channel <channelName>");
+		}
+		else if(command.equalsIgnoreCase("#help #forward")){
+			clientUI.display("Usage:\t#forward <to username>");
+		}
+		else if(command.equalsIgnoreCase("#help #block")){
+			clientUI.display("Usage:\t#block <username>");
+		}
+		else if(command.equalsIgnoreCase("#help #setpassword")){
+			clientUI.display("Usage:\t#setpassword <password>");
+		}
+	
+		else
+			clientUI.display("invalid help topic (make sure there are no characters or spaces at the tail)");
 		
 	}
 	
