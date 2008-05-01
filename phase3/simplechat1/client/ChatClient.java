@@ -4,9 +4,9 @@
 * Project Part: Simplechat Phase 2
 * Title: ChatClient
 * CS320 Spring 2008
-* March 17, 2008
+* April 21, 2008
 * Java
-* Phase 2 of the Simplechat program
+* Phase 3 of the Simplechat program
 */
 package client;
 
