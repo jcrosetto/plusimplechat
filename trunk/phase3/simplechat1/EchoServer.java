@@ -4,9 +4,9 @@
  * Project Part: Simplechat Phase 2
  * Title: EchoServer
  * CS320 Spring 2008
- * March 17, 2008
+ * April 21, 2008
  * Java
- * Phase 2 of the Simplechat program
+ * Phase 3 of the Simplechat program
  */
 
 import java.io.*;
@@ -1052,7 +1052,7 @@ public class EchoServer extends AbstractServer
 					if(clientTemp.getInfo("blocking")!=null){
 						blockedUsers = new ArrayList((ArrayList<String>)clientTemp.getInfo("blocking"));
 						//make sure recipient isn't blocking the sender
-						if(blockedUsers.contains(client.getInfo("username"))){
+						if(blockedUsers.contains(client.getInfo("username")) ){
 							return;
 						}//if user on channel is blocking sender
 					}//if blocking list is not null
