@@ -14,7 +14,7 @@ public class ChannelInfo {
 	/**
 	 * The list of clients on this channel
 	 */
-	private ArrayList<Thread> clientThreadList;
+	private ArrayList<ConnectionToClient> clientList;
 	
 	/**
 	 * The password associated with the channel
@@ -22,13 +22,19 @@ public class ChannelInfo {
 	private String password;
 	
 	/**
+	 * The name associated with the channel
+	 */
+	private String name;
+	
+	/**
 	 * Constructs an instance of Channel
 	 * @param name The name of the channel
 	 * @param client The client creating the channel
 	 */
-	public ChannelInfo(ConnectionToClient client) {
-		clientThreadList = new ArrayList<Thread>();
-		clientThreadList.add(client);
+	public ChannelInfo(String name) {
+		clientList = new ArrayList<ConnectionToClient>();
+		password = "";
+		this.name = name;
 	}
 	
 	/**
@@ -36,7 +42,7 @@ public class ChannelInfo {
 	 * @param client The client to be added to the channel
 	 */
 	public void addClient(ConnectionToClient client) {
-		clientThreadList.add(client);
+		clientList.add(client);
 	}
 	
 	/**
@@ -44,7 +50,7 @@ public class ChannelInfo {
 	 * @param client The client to be removed
 	 */
 	public void removeClient(ConnectionToClient client) {
-		clientThreadList.remove(client);
+		clientList.remove(client);
 	}
 
 	/**
@@ -52,7 +58,7 @@ public class ChannelInfo {
 	 * @return The number of clients connected to this channel
 	 */
 	public int getSize(){
-		return clientThreadList.size();
+		return clientList.size();
 	}
 	
 	/**
@@ -75,7 +81,15 @@ public class ChannelInfo {
 	 * Get the list of clients connected to this channel
 	 * @return The list of clients connected to this channel
 	 */
-	public ArrayList<Thread> getClients() {
-		return clientThreadList;
+	public ArrayList<ConnectionToClient> getClients() {
+		return clientList;
+	}
+	
+	/**
+	 * Get the name associated with this channel
+	 * @return The name associated with this channel
+	 */
+	public String getName() {
+		return name;
 	}
 }

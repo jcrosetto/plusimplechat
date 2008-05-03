@@ -233,9 +233,9 @@ public class ChatClient extends AbstractClient
 			}
 		}
 
-		//channel command
-		//first implementation on 4/16 by james crosetto
-		else if (command.startsWith("#channel ")){
+		//join channel command
+		//added 5/1/08 by James Crosetto
+		else if (command.startsWith("#joinchannel ")){
 			if(!isConnected()){
 				clientUI.display("You must be logged on to do that");
 			}
@@ -248,6 +248,39 @@ public class ChatClient extends AbstractClient
 				}
 			}
 		}
+		
+		//create channel command
+		//added 5/1/08 by James Crosetto
+		else if (command.startsWith("#createchannel ")){
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
+			}
+			else{
+				try{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
+			}
+		}
+		
+		//channel command
+		//added 5/1/08 by James Crosetto
+		else if (command.startsWith("#channel")){
+			if(!isConnected()){
+				clientUI.display("You must be logged on to do that");
+			}
+			else{
+				try{
+					sendToServer(command);
+				}
+				catch(IOException e){
+					clientUI.display("Unable to send message to server.");
+				}
+			}
+		}
+		
 		//forward command
 		//first implementation on 4/18 by cory
 		else if (command.startsWith("#forward ")){
@@ -378,6 +411,7 @@ public class ChatClient extends AbstractClient
 	/**
 	 * Method that helps the User with the various commands.
 	 * Added 4/20 by Cory Stevens tediously filled out by Seth Schwiethale
+	 * Modified 5/1 by James Crosetto (added channel stuff)
 	 * @param command The command that contains the requested help
 	 */
 	private void commandHelp(String command){
@@ -391,7 +425,9 @@ public class ChatClient extends AbstractClient
 			clientUI.display("#sethost\tif you are not logged in you may specify the host to log into");
 			clientUI.display("#setport\tif you are not logged in you may specify the port number to connect to");
 			clientUI.display("#private\tsend private message to a specified user");
-			clientUI.display("#channel\tconnect to a specified chat channel");
+			clientUI.display("#joinchannel\tconnect to a specified chat channel with optional password");
+			clientUI.display("#createchannel\tcreate specified chat channel with optional password");
+			clientUI.display("#channel\tdisplay chat channel you are connected to");
 			clientUI.display("#forward\tforward message you recieve to another user");
 			clientUI.display("#block\tblock messages sent from specified user");
 			clientUI.display("#setpassword\tchanges password");
@@ -421,8 +457,14 @@ public class ChatClient extends AbstractClient
 		else if(command.equalsIgnoreCase("#help #private")){
 			clientUI.display("Usage:\t#private <to username> <message>");
 		}
+		else if(command.equalsIgnoreCase("#help #joinchannel")){
+			clientUI.display("Usage:\t#joinchannel <channelName> [password]");
+		}
+		else if(command.equalsIgnoreCase("#help #createchannel")){
+			clientUI.display("Usage:\t#createchannel <channelName> [password]");
+		}
 		else if(command.equalsIgnoreCase("#help #channel")){
-			clientUI.display("Usage:\t#channel <channelName>");
+			clientUI.display("Usage:\t#channel");
 		}
 		else if(command.equalsIgnoreCase("#help #forward")){
 			clientUI.display("Usage:\t#forward <to username>");
