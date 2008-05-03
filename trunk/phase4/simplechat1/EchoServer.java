@@ -11,6 +11,7 @@
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.StringTokenizer;
 
 import ocsf.server.*;
@@ -42,6 +43,11 @@ public class EchoServer extends AbstractServer
 	 * Hashmap to represent user information that is stored server side.
 	 */
 	private HashMap<String,String> userInfo; 
+	
+	/**
+	 * Hashmap to represent channels available.
+	 */
+	private HashMap<String, ChannelInfo> channels; 
 
 	//Constructors ****************************************************
 
@@ -56,6 +62,8 @@ public class EchoServer extends AbstractServer
 		super(port);
 		this.serverUI = serverUI; 
 		userInfo = new HashMap<String, String>();
+		channels = new HashMap<String, ChannelInfo>();
+		channels.put("default", new ChannelInfo("default"));
 		inputUserInfo();
 		addNewUser("server", "server" );
 	}
@@ -91,10 +99,41 @@ public class EchoServer extends AbstractServer
 		else if(tempMsg.startsWith("#private ")){
 			sendPrvtMsg(tempMsg, client);
 		}
+		//join channel
+		//added 5/1/08 by James Crosetto
+		else if(tempMsg.startsWith("#joinchannel ")){
+			try{
+				if (tempMsg.length() > 13)
+					joinChannel(tempMsg.substring(13,tempMsg.length()), client);
+				else
+					client.sendToClient("You must specify a channel name. Usage: " + 
+							"#joinchannel <channel> [password]");
+			}	
+			catch(IOException e){}
+
+		}
+		//create channel
+		//added 5/1/08 by James Crosetto
+		else if(tempMsg.startsWith("#createchannel ")){
+			try{
+				if (tempMsg.length() > 15)
+					createChannel(tempMsg.substring(15,tempMsg.length()), client);
+				else
+					client.sendToClient("You must specify a channel name. Usage: " + 
+							"#createchannel <channel> [password]");
+			}	
+			catch(IOException e){}
+
+		}
 		//change channel
 		//first implementation 4/16 by james crosetto
-		else if(tempMsg.startsWith("#channel ")){
-			changeChannel(tempMsg, client);
+		//modified 5/1/08 by James Crosetto
+		else if(tempMsg.startsWith("#channel")){
+			try{
+				client.sendToClient("You are currently connected to channel: " + 
+						client.getInfo("channel"));
+			}
+			catch(IOException e){}
 
 		}
 		//forward messages
@@ -192,9 +231,13 @@ public class EchoServer extends AbstractServer
 				}
 
 			}
-			serverUI.display(client.getInfo("username")+" has logged in");
+			serverUI.display(client.getInfo("username")+ " has logged in.");
 			sendToAllClients(client.getInfo("username") + " has logged in.");
+			
 			//following added 4/16 by james crosetto
+			//modified 5/1 for improved channels
+			//add client to default channel
+			channels.get("default").addClient(client);
 			client.setInfo("channel", "default");
 			try{
 				sendToChannel(client.getInfo("username") + 
@@ -203,7 +246,7 @@ public class EchoServer extends AbstractServer
 			catch(Exception e){}
 		}
 		//if another login message is received after client is already logged on
-		else if(client.getInfo("username") != null){
+		else{
 			try{
 				client.sendToClient("You are already logged on");
 			}
@@ -229,14 +272,15 @@ public class EchoServer extends AbstractServer
 	/**
 	 * Method to send private message to specified user
 	 * Added 4/15 
-	 * @param tempMsg
-	 * @param client
+	 * 
+	 * @param tempMsg Contains the message and recipient's username
+	 * @param client The client sending the message
 	 * @author seth schwiethale
+	 * Modified 5/1 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void sendPrvtMsg(String tempMsg, ConnectionToClient client) {
 		StringTokenizer msgData = new StringTokenizer(tempMsg);
-		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient clientTo;
 		ArrayList<String> blockedUsers;
 
@@ -255,49 +299,86 @@ public class EchoServer extends AbstractServer
 
 			//user sends a private message to the server
 			else if(recipient.equalsIgnoreCase("SERVER")){
-				//serverUI.display("PRIVATE from "+client.getInfo("username")+": "+toSend);
+				serverUI.display("PRIVATE from "+client.getInfo("username")+": "+toSend);
 				return;
 			}
-
-			//try to find recipient in clients and then send message
-			for(int i = 0; i<clientThreadList.length;i++){
-				clientTo = (ConnectionToClient) clientThreadList[i];
-				if(((clientTo.getInfo("username")).equals(recipient))){
-					if(clientTo.getInfo("blocking")!=null){
-						blockedUsers = new ArrayList((ArrayList<String>)clientTo.getInfo("blocking"));
-						//make sure recipient isn't blocking the sender
-						if(blockedUsers.contains(client.getInfo("username"))){
-							client.sendToClient("Message could not be sent, "+clientTo.getInfo("username")+" is blocking you!");
-							return;
-						}
-					}
-					clientTo.sendToClient("PM from " + client.getInfo("username")+": "+toSend);
-					//serverUI.display(client.getInfo("username")+" said,'"+toSend+"' to "+clientTo.getInfo("username"));
-					ArrayList<String> sent = new ArrayList<String>();
-					sent.add((String)client.getInfo("username"));
-					forwardMessage(clientTo, toSend, sent);
+			
+			clientTo = findClient(recipient);
+			
+			//recipient was not found in connected clients
+			if (clientTo == null){
+				client.sendToClient("the user you specified is not connected");
+				return;
+			}
+			//client found - check blocking
+			else if(clientTo.getInfo("blocking")!=null){
+				blockedUsers = (ArrayList<String>)clientTo.getInfo("blocking");
+				//make sure recipient isn't blocking the sender
+				if(blockedUsers.contains(client.getInfo("username"))){
+					client.sendToClient("Message could not be sent, "+clientTo.getInfo("username")+" is blocking you!");
 					return;
 				}
 			}
-			//recipient was not found in connected clients
-			client.sendToClient("the user you specified is not connected");
+			clientTo.sendToClient("PM from " + client.getInfo("username")+": "+toSend);
+			//serverUI.display(client.getInfo("username")+" said,'"+toSend+"' to "+clientTo.getInfo("username"));
+			
+			//forward the message to people in clientTo's forwarding list
+			ArrayList<String> sent = new ArrayList<String>();
+			sent.add((String)client.getInfo("username"));
+			forwardMessage(clientTo, toSend, sent);
+			return;
+			
+			
 		}
 		catch(Exception e){}
 	}
+	
+	/**
+	 * Finds a client with a specified username
+	 * @param clientName The username of the client
+	 * @return The ConnectionToClient object with username of clientName. If none exists
+	 * returns null.
+	 * @author James Crosetto 5/1/08
+	 */
+	private ConnectionToClient findClient(String clientName) {
+		Thread[] clientThreadList = getClientConnections();
+		
+		ConnectionToClient client; 
+		
+		for(int i = 0; i<clientThreadList.length;i++){
+			client = (ConnectionToClient) clientThreadList[i];
+			if(((client.getInfo("username")).equals(clientName))){
+				return client;
+			}
+		}
+		
+		//not found
+		return null;
+	}
+	
 	/**
 	 * Method blocks a user from sending messages to another user
 	 * @param msg The message containing the blocked user
 	 * @param client The client that is initiating the block
 	 * @author Cory Stevens
+	 * Modified 5/1 by James Crosetto
 	 */
 	private void blockUser(String msg, ConnectionToClient client){
 		String recipient = "";
 
 		String[] parsedString = msg.split(" ");
-		recipient = parsedString[1];
 
 		try {
-			//do not allow user to forward to themselves
+			
+			if(parsedString.length <= 1){
+				client.sendToClient("You must specify a user to block.");
+				return;
+			}
+				
+				
+			recipient = parsedString[1];
+			
+			//do not allow user to block himself/herself
 			if(client.getInfo("username").equals(recipient)){
 				client.sendToClient("You may not block yourself.");
 				return;
@@ -305,6 +386,7 @@ public class EchoServer extends AbstractServer
 			//check if the user exists
 			if(userInfo.containsKey(recipient)){
 				client.sendToClient("Messages from " + recipient + " will be blocked");
+				
 				storeBlockingInfo(client, recipient);
 				processForwardBlock(client, recipient);
 			}
@@ -316,35 +398,29 @@ public class EchoServer extends AbstractServer
 	}
 	
 	/**
-	 * Method that cancels any blocking that is established between the two users
+	 * Method that cancels any forwarding that is established between the two users
 	 * @param blockingClient The client that is initiating the block
 	 * @param blockedClient The client that is being blocked
+	 * Modified 5/1 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void processForwardBlock(ConnectionToClient blockingClient, String blockedClient){
 		
-		Thread[] clientThreadList = getClientConnections();
-		ConnectionToClient clientTo = null;
+		ConnectionToClient blocked = findClient(blockedClient);
 		
-		for(int i = 0; i<clientThreadList.length;i++){
-			clientTo = (ConnectionToClient) clientThreadList[i];
-			if(((clientTo.getInfo("username")).equals(blockedClient))){
-				break;
-			}
-		}
 		//if blockedClient doesn't forward to anyone return
-		if(clientTo.getInfo("forwardTo") == null || ((ArrayList<String>)clientTo.getInfo("forwardTo")).isEmpty() ){
+		if(blocked.getInfo("forwardTo") == null || ((ArrayList<String>)blocked.getInfo("forwardTo")).isEmpty() ){
 			return;
 		}
 		//ArrayList of the blockedClient's forwarding
-		ArrayList<String> blockedForward = (ArrayList<String>) clientTo.getInfo("forwardTo");
+		ArrayList<String> blockedForward = (ArrayList<String>)blocked.getInfo("forwardTo");
 		//check if blockedClient is forwarding to blockingClient
 		if(blockedForward.contains(blockingClient.getInfo("username"))){
 			try {
-				blockingClient.sendToClient("Forwarding of messages from " + blockedClient + " to you has been terminated");
+				blockingClient.sendToClient("Forwarding of messages from " + blocked.getInfo("username") + " to you has been terminated");
 				//remove blockingClient from blockedClient's block list
 				blockedForward.remove(blockingClient.getInfo("username"));
-				clientTo.sendToClient("Forwarding to " + blockingClient.getInfo("username") + " has been canceled because "+
+				blocked.sendToClient("Forwarding to " + blockingClient.getInfo("username") + " has been canceled because "+
 						blockingClient.getInfo("username")+ " is blocking messages from you");
 			} 
 			catch (IOException e) {}
@@ -359,24 +435,22 @@ public class EchoServer extends AbstractServer
 	 * @param fromClient The client that is initiating the blocking
 	 * @param toClient The client that is receiving the blocking
 	 * @author Cory Stevens
-	 * 
+	 * Modified 5/1 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void storeBlockingInfo(ConnectionToClient fromClient, String toClient){
-		ArrayList<String> forwardTo;
+		ArrayList<String> blocking;
 
+		//add the client that gets blocked to the blocking list of fromClient
 		if(fromClient.getInfo("blocking") == null){
-			forwardTo = new ArrayList<String>();
-			forwardTo.add(toClient);
+			blocking = new ArrayList<String>();
+			blocking.add(toClient);
+			fromClient.setInfo("blocking", blocking);
 		}
 		else{
-			ArrayList<String> tempArrayList = (ArrayList<String>) fromClient.getInfo("blocking");
-			tempArrayList.add(toClient);
-			forwardTo = new ArrayList<String>(tempArrayList);
+			blocking = (ArrayList<String>) fromClient.getInfo("blocking");
+			blocking.add(toClient);
 		}
-
-
-		fromClient.setInfo("blocking", forwardTo);
 	}
 
 	/**
@@ -384,13 +458,14 @@ public class EchoServer extends AbstractServer
 	 * @param msg The message containing the user to unblock
 	 * @param client The client that is unblocking the user
 	 * @author cory stevens
-	 * 
+	 * Modified 5/1 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void unblockUser(String msg, ConnectionToClient client){
 		
 		ArrayList<String> blockedUsers;
 		String[] parsedString = msg.split(" ");
+		ConnectionToClient blocked;
 		
 		if(client.getInfo("blocking") == null || ((ArrayList<String>)client.getInfo("blocking")).isEmpty() ){
 			try {
@@ -399,10 +474,10 @@ public class EchoServer extends AbstractServer
 			catch (IOException e) {}
 			return;
 		}
-
-		blockedUsers = new ArrayList((ArrayList<String>)client.getInfo("blocking")); 
+		
+		blockedUsers = (ArrayList<String>)client.getInfo("blocking"); 
 		//if the unblock has a user specified only removed one user
-		if(msg.startsWith("#unblock ")){
+		if(parsedString.length > 1){
 			if(!blockedUsers.contains(parsedString[1])){
 				try {
 					client.sendToClient("Messages from " + parsedString[1] + " were not blocked.");
@@ -410,26 +485,31 @@ public class EchoServer extends AbstractServer
 				catch (IOException e) {}
 			}
 			else{
+				blocked = findClient(parsedString[1]);
 				blockedUsers.remove(parsedString[1]);
+				
 				try {
 					client.sendToClient("Messages from " + parsedString[1] + " will now be displayed.");
+					if(blocked != null)
+						blocked.sendToClient("You are no longer blocked by " + client.getInfo("username"));
 				} 
 				catch (IOException e) {}
 			}			
 		}
-		//if the unblock command doesnt specify a user, remove all blocked users
+		//if the unblock command doesn't specify a user, remove all blocked users
 		else{
 			try {
 				Iterator it = blockedUsers.iterator();
 				while(it.hasNext()) {
-					client.sendToClient("Messages from " + it.next() + " will now be displayed.");
+					blocked = findClient((String)it.next());
+					client.sendToClient("Messages from " + blocked.getInfo("username") + " will now be displayed.");
+					if(blocked != null)
+						blocked.sendToClient("You are no longer blocked by " + client.getInfo("username"));
 				}
 				blockedUsers.clear();
 			} 
 			catch (IOException e) {}
 		}
-
-		client.setInfo("blocking", blockedUsers);
 	}
 	
 	/**
@@ -437,7 +517,7 @@ public class EchoServer extends AbstractServer
 	 * Added 4/20
 	 * @param client The client that wants to know who they block.
 	 * @author cory stevens
-	 * 
+	 * Modified 5/1 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void whoIBlock(ConnectionToClient client){
@@ -450,40 +530,47 @@ public class EchoServer extends AbstractServer
 			catch (IOException e) {}
 			return;
 		}
-		blockedUsers = new ArrayList((ArrayList<String>)client.getInfo("blocking")); 
+		blockedUsers = (ArrayList<String>)client.getInfo("blocking"); 
 		try {
 			Iterator it = blockedUsers.iterator();
 			while(it.hasNext()) {
-				client.sendToClient("Messages from " + it.next() + " are blocked.");
+				client.sendToClient("Messages from " + it.next()
+									+ " are blocked.");
 			}
 		} 
 		catch (IOException e) {}
 	}
+	
 	/**
 	 * Method that displays to the user who is blocking them.
 	 * Added 4/20
 	 * @param client The client that wishes to know who is blocking him
 	 * @author cory stevens
+	 * Rewritten 5/1 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void whoBlocksMe(ConnectionToClient client){
-		Thread[] clientThreadList = getClientConnections();
-		ConnectionToClient tempClient;
-		ArrayList<String> blockedUsers = new ArrayList<String>();
-		String user = (String)client.getInfo("username");
-
-		for(int i = 0; i<clientThreadList.length;i++){
-			tempClient = (ConnectionToClient) clientThreadList[i];
-			if((tempClient.getInfo("blocking")) != null)
-				if(((ArrayList<String>)(tempClient.getInfo("blocking"))).contains(user)){
-					blockedUsers.add((String)tempClient.getInfo("username"));
+		Thread[] threadList = getClientConnections();
+		ConnectionToClient clientTemp;
+		boolean blocked = false;
+		
+		try{
+			//find all of the clients blocking this client
+			for(int i = 0; i < threadList.length; i++)
+			{
+				clientTemp = (ConnectionToClient)threadList[i];
+				
+				ArrayList<String> blocks = (ArrayList<String>)clientTemp.getInfo("blocking");
+				
+				if(blocks != null && blocks.contains(client.getInfo("username"))){
+					client.sendToClient("Messages to " + clientTemp.getInfo("username")
+							+ " are blocked.");
+					blocked = true;
 				}
-		}
-		try {
-			Iterator it = blockedUsers.iterator();
-			while(it.hasNext()) {
-				client.sendToClient("Messages to " + it.next() + " are blocked.");
 			}
+			
+			if(!blocked)
+				client.sendToClient("No one is blocking you.");
 		}
 		catch (IOException e) {}
 	}
@@ -493,12 +580,11 @@ public class EchoServer extends AbstractServer
 	 * added because of difference with SendPrivMsg parameters
 	 * @author Seth Schwiethale
 	 * @version 3 04/16/08
-	 * @date 04/
 	 * @param tempMsg
+	 * Modified 5/1 by James Crosetto
 	 */
 	private void serverPM(String tempMsg) {
 		StringTokenizer msgData = new StringTokenizer(tempMsg);
-		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient clientTo;
 
 		//get desired recipient and message from command
@@ -509,94 +595,213 @@ public class EchoServer extends AbstractServer
 			String toSend = tempMsg.substring(shave.length());
 
 			//try to find recipient in clients and then send message
-			for(int i = 0; i<clientThreadList.length;i++){
-				clientTo = (ConnectionToClient) clientThreadList[i];
-				if(((clientTo.getInfo("username")).equals(recipient))){
-					clientTo.sendToClient("SERVER MESSAGE: "+toSend);
-					return;
-				}
-			}
+			clientTo = findClient(recipient);
+			
 			//recipient was not found in connected clients
-			serverUI.display("the user you specified is not connected");
-		}
-		catch(Exception e){
-
-		}
-	}
-
-	/**
-	 * Used when a client sends a #channel command. Changes the clients channel or
-	 * returns the channel they are currently on.
-	 * @param tempMsg The message with the #channel command and the new channel
-	 * 					to connect to.
-	 * @param client The client changing channels.
-	 * @date created 4/16/08
-	 * @author James Crosetto
-	 */
-	private void changeChannel(String tempMsg, ConnectionToClient client)
-	{
-		//channel is specified if msg length is greater than 9
-		try{
-			if(tempMsg.length() > 9){
-				//checks to see if channel contains space
-				int space = tempMsg.indexOf(" ", 9);
-				//get channel
-				//no space - valid channel name
-				if(space == -1){
-					String channel = tempMsg.substring(9, tempMsg.length());
-					if(client.getInfo("channel").equals(channel)){
-						client.sendToClient("You are already on channel: " +
-								client.getInfo("channel"));
-					}
-					else{
-						client.setInfo("channel", channel);
-						sendToChannel(client.getInfo("username") + 
-								" has connected to channel: " +
-								channel, channel);
-					}
-				}
-				else{
-					client.sendToClient("Invalid channel name. Channels cannot contain spaces.");
-				}
-
-
-			}
-			//display current channel as private message if new channel isn't specified
-			else{
-				client.sendToClient("You are currently connected to channel: " + 
-						client.getInfo("channel"));
-
+			if(clientTo == null)
+				serverUI.display("the user you specified is not connected");
+			
+			else {
+				clientTo.sendToClient("SERVER MESSAGE: "+toSend);
+				return;
 			}
 		}
 		catch(Exception e){}
 	}
 
 	/**
-	 * Sends a message to a specified channel.
+	 * Used when a client sends a #joinchannel command. Changes the client's channel if
+	 * the channel specified with the command is different from the client's current channel.
+	 * Channels are stored in lower case. Password must be supplied with channel name if
+	 * the channel is protected by a password.
+	 * @param channel The channel the client is trying to join
+	 * @param client The client joining channel.
+	 * @throws IOException
+	 * @author James Crosetto 5/1/08
+	 */
+	private void joinChannel(String channel, ConnectionToClient client) throws IOException
+	{
+		
+		//remove leading and trailing white space
+		channel = channel.trim();
+		
+		//split channel into channel and password
+		String[] info = channel.split(" ");
+		
+		//holds a password supplied by user
+		String password = "";
+		
+		//password specified
+		if(info.length > 1) 
+			password = info[1];
+		
+		channel = info[0];
+		
+		//convert channel to lowercase
+		channel = channel.toLowerCase();
+		
+		//check to see if client is currently on channel
+		if(((String)client.getInfo("channel")).equals(channel)){
+			client.sendToClient("You are already on channel: " +
+					client.getInfo("channel"));
+		}
+		//not on channel
+		else{
+			//check to see if channel exists
+			if (channels.containsKey(channel))
+			{
+				//get new channel info
+				ChannelInfo newChannel = channels.get(channel);
+				
+				//get old channel info
+				ChannelInfo oldChannel = channels.get(client.getInfo("channel"));
+				
+				//check to see if channel has password
+				//no password
+				if(newChannel.getPassword().length() == 0)
+				{
+					//remove client from previous channel
+					oldChannel.removeClient(client);
+					
+					//add client to new channel
+					client.setInfo("channel", channel);
+					
+					newChannel.addClient(client);
+					
+					sendToChannel(client.getInfo("username") + 
+							" has connected to channel: " +
+							channel, channel);
+				}
+				//password
+				else
+				{
+					//correct password entered
+					if(password.equals(newChannel.getPassword()))
+					{
+						//remove client from previous channel
+						oldChannel.removeClient(client);
+						
+						//add client to new channel
+						client.setInfo("channel", channel);
+						
+						newChannel.addClient(client);
+						
+						sendToChannel(client.getInfo("username") + 
+								" has connected to channel: " +
+								channel, channel);
+					}
+					//incorrect password entered
+					else
+					{
+						client.sendToClient("Unable to join channel. Incorrect password entered.");
+					}
+				}
+				
+				//close channel if it isn't the default channel
+				//and there are no more clients in it
+				if(!oldChannel.getName().equals("default") && 
+						oldChannel.getSize() == 0)
+				{
+					channels.remove(oldChannel.getName());
+				}
+				
+				
+			}
+			//channel doesn't exist
+			else
+				client.sendToClient("Unable to join. Channel " + channel + " does not exist");
+		}
+
+	}
+	
+	/**
+	 * Creates a channel specified by a client.
+	 * @param channel The name of the channel
+	 * @param client The client creating the channel
+	 * @throws IOException
+	 * @author James Crosetto 5/1/08
+	 */
+	private void createChannel(String channel, ConnectionToClient client) throws IOException
+	{
+		//remove leading and trailing white space
+		channel = channel.trim();
+		
+		//split channel into channel and password
+		String[] info = channel.split(" ");
+		
+		//holds a password supplied by user
+		String password = "";
+		
+		//password specified
+		if(info.length > 1)
+			password = info[1];
+		
+		channel = info[0];
+		
+		//convert to lowercase for comparison
+		channel = channel.toLowerCase();
+		
+		//check to see if channel already exists
+		if(channels.containsKey(channel)){
+			client.sendToClient("The specified channel already exists.");
+		}
+		//doesn't exist
+		else{
+			//create new ChannelInfo object and store info
+			ChannelInfo c = new ChannelInfo(channel);
+			c.addClient(client);
+			c.setPassword(password);
+			channels.put(channel, c);
+			
+			ChannelInfo oldChannel = channels.get(client.getInfo("channel"));
+			
+			//remove client from previous channel
+			oldChannel.removeClient(client);
+			
+			//close channel if it isn't the default channel
+			//and there are no more clients in it
+			if(!oldChannel.getName().equals("default") && 
+					oldChannel.getSize() == 0)
+			{
+				channels.remove(oldChannel.getName());
+			}
+			
+			//add client to new channel
+			client.setInfo("channel", channel);
+			
+			client.sendToClient("You have created channel " + channel);
+		}
+
+	}
+
+	/**
+	 * Sends a message to a specified channel as a server message.
+	 * 
+	 * Modified 5/1/08 by James Crosetto
 	 * @param msg The message to be sent.
 	 * @param channel The channel to send the message to.
-	 * @date created 4/17/08
-	 * @author James Crosetto
+	 * @author James Crosetto 4/17/08
 	 */
 	private void sendToChannel(String msg, String channel)
 	{
-		Thread[] clientThreadList = getClientConnections();
-		ConnectionToClient clientTo;
-		boolean sent = false; //true if message sent to a client
 
 		try{
 
-			//try to find recipient in clients and then send message
-			for(int i = 0; i < clientThreadList.length; i++){
-				clientTo = (ConnectionToClient) clientThreadList[i];
-				if(((clientTo.getInfo("channel")).equals(channel))){
-					clientTo.sendToClient("SERVER MESSAGE: " + msg);
-					sent = true;
+			//valid channel
+			if(channels.containsKey(channel))
+			{
+				//get list of clients on channel
+				ArrayList<ConnectionToClient> clients = channels.get(channel).getClients();
+				
+				for(int i = 0; i < clients.size(); i++)
+				{
+					clients.get(i).sendToClient("SERVER MSG: " + msg);
 				}
 			}
-
-			if(!sent)
-				serverUI.display("The specified channel was not found.");
+			else
+			{
+				serverUI.display("Specified channel not found");
+			}
 		}
 		catch(Exception e){
 
@@ -608,44 +813,55 @@ public class EchoServer extends AbstractServer
 	 * @param msg The msg containing the user to forward to
 	 * @param client The Client that is setting up the forwarding
 	 * @author cory stevens
+	 * Modified 5/2 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void forwardingSetup(String msg, ConnectionToClient client){
 		String recipient = "";
-		Thread[] clientThreadList = getClientConnections();
 		ConnectionToClient clientTo;
 		ArrayList<String> blockedUsers;
 
 		String[] parsedString = msg.split(" ");
-		recipient = parsedString[1];
+		
 
 		try {
+			if(parsedString.length <= 1){
+				client.sendToClient("You must specify a user to forward to.");
+				return;
+			}
+			
+			recipient = parsedString[1];
+			
 			//do not allow user to forward to themselves
 			if(client.getInfo("username").equals(recipient)){
 				client.sendToClient("You may not forward messages to yourself.");
 				return;
 			}
-			//try to find recipient in clients and then send message
-			for(int i = 0; i<clientThreadList.length;i++){
-				clientTo = (ConnectionToClient) clientThreadList[i];
-				if(((clientTo.getInfo("username")).equals(recipient))){
-					if(clientTo.getInfo("blocking")!=null){
-						blockedUsers = new ArrayList((ArrayList<String>)clientTo.getInfo("blocking"));
-						//make sure recipient isn't blocking the sender
-						if(blockedUsers.contains(client.getInfo("username"))){
-							client.sendToClient("Cannot forward. "+clientTo.getInfo("username")+" is blocking you!");
-							return;
-						}
-					}
-					clientTo.sendToClient("User " + client.getInfo("username") + 
-					" is now forwarding messages to you.");
-					client.sendToClient("You are now forwarding messages to " + recipient);
-					storeForwardingInfo(client, clientTo);
+			
+			//get clientTo connection
+			clientTo = findClient(recipient);
+			
+			//recipient was not found in connected clients
+			if (clientTo == null){
+				client.sendToClient("The user you specified is not connected");
+				return;
+			}
+			
+			if(clientTo.getInfo("blocking") != null){
+				blockedUsers = (ArrayList<String>)clientTo.getInfo("blocking");
+				//make sure recipient isn't blocking the sender
+				if(blockedUsers.contains(client.getInfo("username"))){
+					client.sendToClient("Cannot forward. "+clientTo.getInfo("username")+" is blocking you!");
 					return;
 				}
 			}
-			//recipient was not found in connected clients
-			client.sendToClient("The user you specified is not connected");
+
+			clientTo.sendToClient("User " + client.getInfo("username") + 
+			" is now forwarding messages to you.");
+			client.sendToClient("You are now forwarding messages to " + recipient);
+			storeForwardingInfo(client, recipient);
+			return;
+			
 		} catch (IOException e) {}
 
 
@@ -654,25 +870,23 @@ public class EchoServer extends AbstractServer
 	 * Method to store the forwarding info for each user involved in the forwarding.
 	 * Added 4/19
 	 * @param fromClient The client that is initiating the forwarding
-	 * @param toClient The client that is receiving the forward
+	 * @param toClient The client username that is receiving the forward
 	 * @author Cory Stevens
-	 * 
+	 * Modified 5/2 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
-	private void storeForwardingInfo(ConnectionToClient fromClient, ConnectionToClient toClient){
+	private void storeForwardingInfo(ConnectionToClient fromClient, String toClient){
 		ArrayList<String> forwardTo;
 
 		if(fromClient.getInfo("forwardTo") == null){
 			forwardTo = new ArrayList<String>();
-			forwardTo.add((String)toClient.getInfo("username"));
+			forwardTo.add(toClient);
+			fromClient.setInfo("forwardTo", forwardTo);
 		}
 		else{
-			ArrayList<String> tempArrayList = (ArrayList<String>) fromClient.getInfo("forwardTo");
-			tempArrayList.add((String)toClient.getInfo("username"));
-			forwardTo = new ArrayList<String>(tempArrayList);
+			forwardTo = (ArrayList<String>) fromClient.getInfo("forwardTo");
+			forwardTo.add(toClient);
 		}
-
-		fromClient.setInfo("forwardTo", forwardTo);
 	}
 	/**
 	 * Method that will forward messages to their recipients 
@@ -680,43 +894,46 @@ public class EchoServer extends AbstractServer
 	 * @param msg The message that is being forwarded
 	 * @param sent The list of users the message has been forwarded to
 	 * @author cory stevens
+	 * Modified 5/2 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void forwardMessage(ConnectionToClient fromClient, String msg, ArrayList<String> sent){
-		Thread[] clientThreadList = getClientConnections();
-		ConnectionToClient clientTo;
 		//if the fromClient does not have anyone to forward to return
 		if(fromClient.getInfo("forwardTo") == null){
 			return;
 		}
 		ArrayList<String> recipients;
-		recipients = new ArrayList<String>((ArrayList<String>)fromClient.getInfo("forwardTo"));
+		recipients = (ArrayList<String>)fromClient.getInfo("forwardTo");
 
+		//add the client sending the message to the list sent
 		sent.add((String)fromClient.getInfo("username"));
+
+		ConnectionToClient recipient;
 		
-		int n = recipients.size();
-		for(int i = 0; i < n ; i++){
-			String recipient = recipients.get(i);
-			//try to find recipient in clients and then send message
-			for(int j = 0; j<clientThreadList.length;j++){
-				clientTo = (ConnectionToClient) clientThreadList[j];
-				if(!sent.contains(recipient) && ((clientTo.getInfo("username")).equals(recipient))){
-					try {
-						clientTo.sendToClient("Forward from " + fromClient.getInfo("username")+": "+msg);
-					} catch (IOException e) {}
-					forwardMessage(clientTo, msg, sent);
-					return;
-				}
+		String recipientTemp;
+		
+		for(int i = 0; i < recipients.size(); i++){
+			recipientTemp = recipients.get(i);
+			
+			recipient = findClient(recipientTemp);
+			
+			//send the message if they haven't already received the message
+			if(!sent.contains(recipientTemp) && recipient != null){
+				try {
+					recipient.sendToClient("Forward from " + fromClient.getInfo("username")+": "+msg);
+				} catch (IOException e) {}
+				forwardMessage(recipient, msg, sent);
+				return;
 			}
 		}
 	}
-	
+
 	/**
 	 * Method that removes forwarding to a user
 	 * @param msg The message containing the user to unforward
 	 * @param client The client that is unforwarding another client
-	 * @author james crosetto
-	 * 
+	 * @author james crosetto 4/20
+	 * Modified 5/2 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	private void unforwardUser(String msg, ConnectionToClient client){
@@ -732,9 +949,11 @@ public class EchoServer extends AbstractServer
 			return;
 		}
 
-		forwardedUsers = new ArrayList((ArrayList<String>)client.getInfo("forwardTo")); 
+		forwardedUsers = (ArrayList<String>)client.getInfo("forwardTo"); 
 		//if the unforward has a user specified only remove one user
-		if(msg.startsWith("#unforward ")){
+		if(parsedString.length > 1){
+			
+			//no forwarding to client
 			if(!forwardedUsers.contains(parsedString[1])){
 				try {
 					client.sendToClient("Messages have not been forwarded to " + parsedString[1]);
@@ -753,15 +972,15 @@ public class EchoServer extends AbstractServer
 		else{
 			try {
 				Iterator it = forwardedUsers.iterator();
+				String forwarded;
 				while(it.hasNext()) {
-					client.sendToClient("Messages are no longer forwarded to " + it.next());
+					forwarded = (String)it.next();
+					client.sendToClient("Messages are no longer forwarded to " + forwarded);
 				}
 				forwardedUsers.clear();
 			} 
 			catch (IOException e) {}
 		}
-
-		client.setInfo("forwardTo", forwardedUsers);
 	}
 
 	/**
@@ -878,12 +1097,25 @@ public class EchoServer extends AbstractServer
 	 * On 4/18 Cory added a check for null username for users that didn't
 	 * fully connect.  For example if a user connects but uses the wrong password.
 	 * @param client the connection with the client.
+	 * Modified 5/2 by James Crosetto
 	 */
 	public void clientDisconnected(ConnectionToClient client) {
 		//added 4/18
 		if(client.getInfo("username") != null){
 			serverUI.display(client.getInfo("username")+" has logged out");
 			sendToAllClients(client.getInfo("username")+" has logged out");
+		}
+		
+		//remove client from channel
+		ChannelInfo oldChannel = channels.get(client.getInfo("channel"));
+		oldChannel.removeClient(client);
+		
+		//close channel if it isn't the default channel
+		//and there are no more clients in it
+		if(!oldChannel.getName().equals("default") && 
+				oldChannel.getSize() == 0)
+		{
+			channels.remove(oldChannel.getName());
 		}
 	}
 	/**
@@ -900,6 +1132,18 @@ public class EchoServer extends AbstractServer
 		if(client.getInfo("username") != null){
 			serverUI.display(client.getInfo("username") + " has disconnected.");
 			sendToAllClients(client.getInfo("username") + " has disconnected.");
+		}
+		
+		//remove client from channel
+		ChannelInfo oldChannel = channels.get(client.getInfo("channel"));
+		oldChannel.removeClient(client);
+		
+		//close channel if it isn't the default channel
+		//and there are no more clients in it
+		if(!oldChannel.getName().equals("default") && 
+				oldChannel.getSize() == 0)
+		{
+			channels.remove(oldChannel.getName());
 		}
 	}
 
@@ -1036,31 +1280,40 @@ public class EchoServer extends AbstractServer
 	 * @param msg The message to be sent
 	 * @param client The client sending the message
 	 * @author James Crosetto
+	 * Modified 5/2 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
 	public void sendToAllClients(Object msg, ConnectionToClient client){
 
-		Thread[] clientThreadList = getClientConnections();
+		//get list of users on same channel as client
+		ArrayList<ConnectionToClient> clientList = channels.get(client.getInfo("channel")).getClients();
 
-		for (int i=0; i<clientThreadList.length; i++)
+		//current client that sending client is sending a message to
+		ConnectionToClient clientTemp;
+		
+		
+
+		for (int i=0; i < clientList.size(); i++)
 		{
+			
+			clientTemp = clientList.get(i);
+			
+			//holds clients blocking the sending client
+			ArrayList<String> blockedUsers = new ArrayList<String>();
+			
+			if(clientTemp.getInfo("blocking")!=null){
+				blockedUsers = (ArrayList<String>)clientTemp.getInfo("blocking");
+			}//if blocking list is not null
+			
 			try
 			{
-				ArrayList<String> blockedUsers;
-				ConnectionToClient clientTemp = (ConnectionToClient)clientThreadList[i];
-				if(client.getInfo("channel").equals(clientTemp.getInfo("channel"))){
-					if(clientTemp.getInfo("blocking")!=null){
-						blockedUsers = new ArrayList((ArrayList<String>)clientTemp.getInfo("blocking"));
-						//make sure recipient isn't blocking the sender
-						if(blockedUsers.contains(client.getInfo("username")) ){
-							return;
-						}//if user on channel is blocking sender
-					}//if blocking list is not null
-					
-					clientTemp.sendToClient(msg);
-				}//if client is on senders channel
 
+				//make sure recipient isn't blocking the sender
+				if(!blockedUsers.contains(client.getInfo("username")) ){
+					clientTemp.sendToClient(msg);
+				}//if user on channel is blocking sender
 			}
+
 			catch (Exception ex) {}
 		}
 	}
