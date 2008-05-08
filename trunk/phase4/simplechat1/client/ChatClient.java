@@ -21,7 +21,7 @@ import java.util.StringTokenizer;
 *
 * @version March 2008
 */
-public class ChatClient extends AbstractClient
+public class ChatClient extends ObservableClient
 {
 	//Instance variables **********************************************
 	

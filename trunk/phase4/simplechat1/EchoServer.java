@@ -25,7 +25,7 @@ import java.util.*;
  *
  * @version March 2008
  */
-public class EchoServer extends AbstractServer 
+public class EchoServer extends ObservableServer
 {
 	//Class variables *************************************************
 
