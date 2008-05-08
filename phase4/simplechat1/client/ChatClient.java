@@ -9,8 +9,8 @@
 * Phase 3 of the Simplechat program
 */
 package client;
-
-import ocsf.client.*;
+import com.lloseng.ocsf.client.*;
+//import ocsf.client.*;
 import common.*;
 import java.io.*;
 import java.util.StringTokenizer;

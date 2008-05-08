@@ -1,6 +1,7 @@
 
 import java.util.ArrayList;
-import ocsf.server.ConnectionToClient;
+//import ocsf.server.ConnectionToClient;
+import com.lloseng.ocsf.server.ConnectionToClient;
 
 /**
  * This class holds the information for a channel, including the clients connected
