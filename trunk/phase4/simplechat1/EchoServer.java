@@ -129,10 +129,27 @@ public class EchoServer extends ObservableServer
 		//change channel
 		//first implementation 4/16 by james crosetto
 		//modified 5/1/08 by James Crosetto
-		else if(tempMsg.startsWith("#channel")){
+		else if(tempMsg.equals("#channel")){
 			try{
 				client.sendToClient("You are currently connected to channel: " + 
 						client.getInfo("channel"));
+			}
+			catch(IOException e){}
+
+		}
+		//display a sorted list of channels to the user
+		//added 5/8/08 by James Crosetto
+		else if(tempMsg.equals("#channellist")){
+			try{
+				String[] chanlist = getChannels(client);
+				Arrays.sort(chanlist);
+				
+				client.sendToClient("List of all channels:");
+				for (int i = 0; i < chanlist.length; i++)
+				{
+					client.sendToClient(chanlist[i]);
+				}
+				
 			}
 			catch(IOException e){}
 
@@ -326,10 +343,7 @@ public class EchoServer extends ObservableServer
 			//forward the message to people in clientTo's forwarding list
 			ArrayList<String> sent = new ArrayList<String>();
 			sent.add((String)client.getInfo("username"));
-			forwardMessage(clientTo, toSend, sent);
-			return;
-			
-			
+			forwardMessage(clientTo, toSend, sent);			
 		}
 		catch(Exception e){}
 	}
@@ -775,6 +789,22 @@ public class EchoServer extends ObservableServer
 
 	}
 
+	
+	/**
+	 * Returns an array containing the names of the channels currently available.
+	 * The elements in the array are in no particular order.
+	 * @author James Crosetto 5/8/08
+	 *
+	 * @return The array containing the names of the currently available channels.
+	 */
+	private String[] getChannels(ConnectionToClient c)
+	{
+		String[] chan = new String[1];
+		chan = channels.keySet().toArray(chan);
+		return chan;
+	}
+	
+	
 	/**
 	 * Sends a message to a specified channel as a server message.
 	 * 
