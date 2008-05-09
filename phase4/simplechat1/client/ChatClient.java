@@ -45,7 +45,7 @@ public class ChatClient implements Observer
 	/**
 	 * The ChatClient is Observable
 	 */
-	ObservableClient obsClient;
+	private ObservableClient obsClient;
 	
 	//Constructors ****************************************************
 	
