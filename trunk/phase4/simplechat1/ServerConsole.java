@@ -11,6 +11,9 @@
 */
 
 import java.io.*;
+
+import com.lloseng.ocsf.server.ObservableOriginatorServer;
+
 import common.*;
 
 /**
@@ -46,10 +49,11 @@ public class ServerConsole implements ChatIF
 	*/
 	public ServerConsole(int port) 
 	{
-		server= new EchoServer(port, this);
+		ObservableOriginatorServer obsOrigSrvr = new ObservableOriginatorServer(port);
+		server= new EchoServer( this, obsOrigSrvr);
 		try 
 		{
-			server.listen();
+			obsOrigSrvr.listen();
 		} 
 		catch(IOException exception) 
 		{

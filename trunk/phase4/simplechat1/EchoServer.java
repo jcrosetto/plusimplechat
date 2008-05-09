@@ -12,6 +12,7 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Observable;
 import java.util.StringTokenizer;
 
 //import ocsf.server.*;
@@ -25,7 +26,7 @@ import java.util.*;
  *
  * @version March 2008
  */
-public class EchoServer extends AbstractServer
+public class EchoServer implements Observer
 {
 	//Class variables *************************************************
 
@@ -49,18 +50,24 @@ public class EchoServer extends AbstractServer
 	 * Hashmap to represent channels available.
 	 */
 	private HashMap<String, ChannelInfo> channels; 
+	
+	/**
+	 * EchoServer is Observable in the Observer Layer
+	 */
+	private ObservableOriginatorServer obsOrigServ;
 
 	//Constructors ****************************************************
 
 	/**
 	 * Constructs an instance of the echo server.
 	 *
-	 * @param port The port number to connect on.
 	 * @param serverUI The interface type variable
+	 * @param newOoS The ObservableOriginatorServer instantiated in ServerConsole
 	 */
-	public EchoServer(int port, ChatIF serverUI) 
+	public EchoServer(ChatIF serverUI, ObservableOriginatorServer newOoS) 
 	{
-		super(port);
+		this.obsOrigServ = newOoS;
+		this.obsOrigServ.addObserver(this); //Adds this as an observer to the set of observers for this object
 		this.serverUI = serverUI; 
 		userInfo = new HashMap<String, String>();
 		channels = new HashMap<String, ChannelInfo>();
@@ -75,22 +82,32 @@ public class EchoServer extends AbstractServer
 	/**
 	 * This method handles any messages received from the client.
 	 *
+	 * @param o is Observable
 	 * @param msg The message received from the client.
-	 * @param client The connection from which the message originated.
 	 */
-	public void handleMessageFromClient
-	(Object msg, ConnectionToClient client)
+	public void update(Observable o,Object msg)
 	{
-		//convert object to string	
-		String tempMsg = msg.toString();
+		//convert object to an OriginatorMessage
+		OriginatorMessage origMsg = (OriginatorMessage)msg;
+		//get the string message from the OriginatorMessage
+		String tempMsg = (String)origMsg.getMessage();
 		
+		//Check for Server Message
+		if(tempMsg.startsWith("#OS:")){
+			serverUI.display(tempMsg);
+			return;
+		}
+		
+		//otherwise msg was send form server and client is not null
+		ConnectionToClient client = origMsg.getOriginator();
+		//command will determine which method will handle msg
 		String command;
 		int index = tempMsg.indexOf(" ");
 		if (index != -1)
 			command = tempMsg.substring(0, index).toLowerCase();
 		else
 			command = tempMsg.toLowerCase();
-		
+
 		//if the username is null and the message receiving is not a login message
 		if(!command.equals("#login") && client.getInfo("username")== null){
 			try{
@@ -212,6 +229,7 @@ public class EchoServer extends AbstractServer
 
 	}
 
+
 	/**
 	 * Method that handles all login information from users
 	 * Added 4/16
@@ -263,7 +281,7 @@ public class EchoServer extends AbstractServer
 
 			}
 			serverUI.display(client.getInfo("username")+ " has logged in.");
-			sendToAllClients(client.getInfo("username") + " has logged in.");
+			obsOrigServ.sendToAllClients(client.getInfo("username") + " has logged in.");
 			
 			//following added 4/16 by james crosetto
 			//modified 5/1 for improved channels
@@ -384,7 +402,7 @@ public class EchoServer extends AbstractServer
 	 * @author James Crosetto 5/1/08
 	 */
 	private ConnectionToClient findClient(String clientName) {
-		Thread[] clientThreadList = getClientConnections();
+		Thread[] clientThreadList = obsOrigServ.getClientConnections();
 		
 		ConnectionToClient client; 
 		
@@ -593,7 +611,7 @@ public class EchoServer extends AbstractServer
 	 */
 	@SuppressWarnings("unchecked")
 	private void whoBlocksMe(ConnectionToClient client){
-		Thread[] threadList = getClientConnections();
+		Thread[] threadList = obsOrigServ.getClientConnections();
 		ConnectionToClient clientTemp;
 		boolean blocked = false;
 		
@@ -1127,7 +1145,7 @@ public class EchoServer extends AbstractServer
 	 */
 	protected void serverStarted()
 	{
-		serverUI.display("Server listening for connections on port " + getPort());
+		serverUI.display("Server listening for connections on port " + obsOrigServ.getPort());
 	}
 
 	/**
@@ -1162,7 +1180,7 @@ public class EchoServer extends AbstractServer
 		//added 4/18
 		if(client.getInfo("username") != null){
 			serverUI.display(client.getInfo("username")+" has logged out");
-			sendToAllClients(client.getInfo("username")+" has logged out");
+			obsOrigServ.sendToAllClients(client.getInfo("username")+" has logged out");
 		}
 		
 		//remove client from channel
@@ -1190,7 +1208,7 @@ public class EchoServer extends AbstractServer
 		//added 4/18
 		if(client.getInfo("username") != null){
 			serverUI.display(client.getInfo("username") + " has disconnected.");
-			sendToAllClients(client.getInfo("username") + " has disconnected.");
+			obsOrigServ.sendToAllClients(client.getInfo("username") + " has disconnected.");
 		}
 		
 		//remove client from channel
@@ -1213,7 +1231,7 @@ public class EchoServer extends AbstractServer
 	{
 		try
 		{
-			close();
+			obsOrigServ.close();
 		}
 		catch(IOException e) {}
 		System.exit(0);
@@ -1230,7 +1248,7 @@ public class EchoServer extends AbstractServer
 			serverCommand(message);
 		else{
 			serverUI.display(message);
-			sendToAllClients("SERVER MSG> " + message);
+			obsOrigServ.sendToAllClients("SERVER MSG> " + message);
 		}
 	}
 
@@ -1243,16 +1261,16 @@ public class EchoServer extends AbstractServer
 		//Quit command
 		if(command.equalsIgnoreCase("#quit")){
 			serverUI.display("Server is quitting");
-			sendToAllClients("Server is quitting");
+			obsOrigServ.sendToAllClients("Server is quitting");
 			quit();
 		}
 		//Stop command
 		else if(command.equalsIgnoreCase("#stop")){
-			if(!isListening())
+			if(!obsOrigServ.isListening())
 				serverUI.display("Server is already stopped");
 			else{
-				stopListening();
-				sendToAllClients("Server has stopped listening for connections.");
+				obsOrigServ.stopListening();
+				obsOrigServ.sendToAllClients("Server has stopped listening for connections.");
 			}
 		}
 		//close command
@@ -1260,8 +1278,8 @@ public class EchoServer extends AbstractServer
 			try
 			{
 				serverUI.display("Server is closing");
-				sendToAllClients("Server is closing");
-				close();
+				obsOrigServ.sendToAllClients("Server is closing");
+				obsOrigServ.close();
 				isClosed = true;
 			}
 			catch(IOException e) {}
@@ -1274,18 +1292,18 @@ public class EchoServer extends AbstractServer
 			}
 			else{
 				String tempPort = command.substring(9, command.length());
-				setPort(Integer.parseInt(tempPort));
+				obsOrigServ.setPort(Integer.parseInt(tempPort));
 				serverUI.display("Port set to " + tempPort);
 			}
 		}
 		//start command
 		else if(command.startsWith("#start")){
-			if(isListening())
+			if(obsOrigServ.isListening())
 				serverUI.display("Server is already running");
 			else{
 				try
 				{
-					listen();
+					obsOrigServ.listen();
 				}
 				catch(IOException e) {}
 				isClosed = false;
@@ -1293,7 +1311,7 @@ public class EchoServer extends AbstractServer
 		}
 		//getport command
 		else if(command.equalsIgnoreCase("#getport")){
-			serverUI.display("The current port is " + getPort());
+			serverUI.display("The current port is " + obsOrigServ.getPort());
 		}
 		//catch all other commands
 		//check for private message command
@@ -1376,6 +1394,9 @@ public class EchoServer extends AbstractServer
 			catch (Exception ex) {}
 		}
 	}
+
+
+
 
 }
 //End of EchoServer class
