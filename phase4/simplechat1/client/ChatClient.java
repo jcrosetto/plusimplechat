@@ -128,12 +128,16 @@ public class ChatClient extends ObservableClient
 	* @param command The command to process
 	*/
 	public void clientCommand(String command){
+		//temp variable for comparison while ignoring case
+		String commandtemp = command.toLowerCase().trim();
+		
+		
 		//the quit command
-		if(command.equalsIgnoreCase("#quit")){
+		if(commandtemp.equals("#quit")){
 			quit();
 		}
 		//the logoff command
-		else if(command.equalsIgnoreCase("#logoff")){
+		else if(commandtemp.equals("#logoff")){
 			try
 			{
 				closeConnection();
@@ -141,7 +145,7 @@ public class ChatClient extends ObservableClient
 			catch(IOException e) {}
 		}
 		//the login command
-		else if(command.equalsIgnoreCase("#login")){
+		else if(commandtemp.equals("#login")){
 			//cannot login if you are already logged on
 			if(isConnected()){
 				clientUI.display("Already logged in");
@@ -162,7 +166,7 @@ public class ChatClient extends ObservableClient
 			}
 		}
 		//the login command with username
-		else if(command.startsWith("#login ")){
+		else if(commandtemp.startsWith("#login ")){
 			//cannot login if already logged on
 			if(isConnected()){
 				clientUI.display("You must be logged off to do that");
@@ -183,15 +187,15 @@ public class ChatClient extends ObservableClient
 		}
 		
 		//gethost command
-		else if(command.equalsIgnoreCase("#gethost"))
+		else if(commandtemp.equals("#gethost"))
 			clientUI.display("" + getHost());
 		//getport command
-		else if(command.equalsIgnoreCase("#getport"))
+		else if(commandtemp.equals("#getport"))
 			clientUI.display("" + getPort());
 		//sethost command
 		//note the space after sethost, this ensures that a host is
 		//specified
-		else if(command.startsWith("#sethost ")){
+		else if(commandtemp.startsWith("#sethost ")){
 			//cannot sethost if already logged on
 			if(isConnected()){
 				clientUI.display("You must be logged off to do that");
@@ -203,7 +207,7 @@ public class ChatClient extends ObservableClient
 			}
 		}
 		//setport commmand note space after command
-		else if(command.startsWith("#setport ")){
+		else if(commandtemp.startsWith("#setport ")){
 			//cannot set port if connected
 			if(isConnected()){
 				clientUI.display("You must be logged off to do that");
@@ -224,7 +228,7 @@ public class ChatClient extends ObservableClient
 
 		//check for private message command
 		//first implementation on 4/15 by seth schwiethale
-		else if(command.startsWith("#private ")){
+		else if(commandtemp.startsWith("#private ")){
 			if(!isConnected()){
 				clientUI.display("You must be logged on to do that");
 			}
@@ -232,156 +236,16 @@ public class ChatClient extends ObservableClient
 				doPM(command);
 			}
 		}
-
-		//join channel command
+		
+		//easier command view
 		//added 5/1/08 by James Crosetto
-		else if (command.startsWith("#joinchannel ")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-		}
-		
-		//create channel command
-		//added 5/1/08 by James Crosetto
-		else if (command.startsWith("#createchannel ")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-		}
-		
-		//channel command
-		//added 5/1/08 by James Crosetto
-		else if (command.startsWith("#channel")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-		}
-		
-		//forward command
-		//first implementation on 4/18 by cory
-		else if (command.startsWith("#forward ")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-
-		}
-		//unforward command
-		//first implementation on 4/19 by cory
-		else if (command.startsWith("#unforward")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-
-		}
-		
-		//block command
-		//first implementation on 4/19 by cory
-		else if (command.startsWith("#block ")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-
-		}
-		//unblock command
-		//first implementation on 4/19 by cory
-		else if (command.startsWith("#unblock")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-
-		}
-		//whoiblock command
-		//first implementation on 4/20 by cory
-		else if (command.startsWith("#whoiblock")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-
-		}
-		//unblock command
-		//first implementation on 4/20 by cory
-		else if (command.startsWith("#whoblocksme")){
-			if(!isConnected()){
-				clientUI.display("You must be logged on to do that");
-			}
-			else{
-				try{
-					sendToServer(command);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to send message to server.");
-				}
-			}
-
-		}
-		//change password on the server
-		//first implementation on 4/19 by Cory
-		else if(command.startsWith("#setpassword ")){
-			//cannot set password if not connected
+		else if (commandtemp.startsWith("#setpassword ") || commandtemp.equals("#whoblocksme")
+				|| commandtemp.equals("#whoiblock") || commandtemp.startsWith("#unblock")
+				|| commandtemp.startsWith("#block ") || commandtemp.startsWith("#unforward")
+				|| commandtemp.startsWith("#forward ") || commandtemp.equals("#channel")
+				|| commandtemp.startsWith("#createchannel ") || commandtemp.startsWith("#joinchannel ")
+				|| commandtemp.equals("#channellist"))
+		{
 			if(!isConnected()){
 				clientUI.display("You must be logged on to do that");
 			}
@@ -395,9 +259,10 @@ public class ChatClient extends ObservableClient
 				}
 			}
 		}
+		
 		//give the user help with the commands
 		//Added on 4/20 by Cory
-		else if(command.startsWith("#help")){
+		else if(commandtemp.startsWith("#help")){
 			commandHelp(command);
 		}
 
@@ -427,6 +292,7 @@ public class ChatClient extends ObservableClient
 			clientUI.display("#private\tsend private message to a specified user");
 			clientUI.display("#joinchannel\tconnect to a specified chat channel with optional password");
 			clientUI.display("#createchannel\tcreate specified chat channel with optional password");
+			clientUI.display("#channellist\tdisplay all of the available channels");
 			clientUI.display("#channel\tdisplay chat channel you are connected to");
 			clientUI.display("#forward\tforward message you recieve to another user");
 			clientUI.display("#block\tblock messages sent from specified user");
@@ -465,6 +331,9 @@ public class ChatClient extends ObservableClient
 		}
 		else if(command.equalsIgnoreCase("#help #channel")){
 			clientUI.display("Usage:\t#channel");
+		}
+		else if(command.equalsIgnoreCase("#help #channellist")){
+			clientUI.display("Usage:\t#channellist");
 		}
 		else if(command.equalsIgnoreCase("#help #forward")){
 			clientUI.display("Usage:\t#forward <to username>");
