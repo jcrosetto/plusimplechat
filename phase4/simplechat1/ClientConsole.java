@@ -11,6 +11,9 @@
 */
 
 import java.io.*;
+
+import com.lloseng.ocsf.client.ObservableClient;
+
 import client.*;
 import common.*;
 
@@ -52,7 +55,8 @@ public class ClientConsole implements ChatIF
 	{
 		try 
 		{
-			client= new ChatClient(username, password, host, port, this);
+			ObservableClient newClient = new ObservableClient(host, port);
+			client= new ChatClient(username, password, this, newClient);
 		} 
 		catch(IOException exception) 
 		{

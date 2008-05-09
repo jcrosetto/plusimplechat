@@ -13,6 +13,8 @@ import com.lloseng.ocsf.client.*;
 //import ocsf.client.*;
 import common.*;
 import java.io.*;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.StringTokenizer;
 
 /**
@@ -21,7 +23,7 @@ import java.util.StringTokenizer;
 *
 * @version March 2008
 */
-public class ChatClient extends ObservableClient
+public class ChatClient implements Observer
 {
 	//Instance variables **********************************************
 	
@@ -40,6 +42,11 @@ public class ChatClient extends ObservableClient
 	 */
 	String password;
 	
+	/**
+	 * The ChatClient is Observable
+	 */
+	ObservableClient obsClient;
+	
 	//Constructors ****************************************************
 	
 	/**
@@ -50,17 +57,19 @@ public class ChatClient extends ObservableClient
 	* @param port The port number to connect on.
 	* @param clientUI The interface type variable.
 	*/
-	public ChatClient(String username, String password, String host, int port, ChatIF clientUI)
+	public ChatClient(String username, String password, ChatIF clientUI, ObservableClient newObservable )
 	throws IOException
 	{
-		super(host, port); //Call the superclass constructor
+		
+		this.obsClient = newObservable;
+		this.obsClient.addObserver(this);
 		this.clientUI = clientUI;
 		this.username = username;
 		this.password = password;
 		try{
-			openConnection();
+			obsClient.openConnection();
 			//Immediately send the login information to the server
-			sendToServer("#login " + username + " " + password);
+			obsClient.sendToServer("#login " + username + " " + password);
 		}
 		catch(IOException e){
 			clientUI.display("Cannot open connection. Awaiting command.");
@@ -75,7 +84,7 @@ public class ChatClient extends ObservableClient
 	*
 	* @param msg The message from the server.
 	*/
-	public void handleMessageFromServer(Object msg)
+	public void update(Observable o, Object msg)
 	{
 		clientUI.display(msg.toString());
 	}
@@ -92,10 +101,10 @@ public class ChatClient extends ObservableClient
 			clientCommand(message);
 		}
 		//check if connected, if not do not send message to server
-		else if(isConnected()){
+		else if(obsClient.isConnected()){
 			try
 			{
-				sendToServer(message);
+				obsClient.sendToServer(message);
 			}
 			catch(IOException e)
 			{
@@ -116,7 +125,7 @@ public class ChatClient extends ObservableClient
 	{
 		try
 		{
-			closeConnection();
+			obsClient.closeConnection();
 		}
 		catch(IOException e) {}
 		System.exit(0);
@@ -147,7 +156,7 @@ public class ChatClient extends ObservableClient
 		else if(commandtemp.equals("#logoff")){
 			try
 			{
-				closeConnection();
+				obsClient.closeConnection();
 			}
 			catch(IOException e) {}
 		}
@@ -156,18 +165,18 @@ public class ChatClient extends ObservableClient
 			//cannot login if you are already logged on
 			String[] info = command.split(" ");
 			try{
-				if(isConnected()){
+				if(obsClient.isConnected()){
 					clientUI.display("Already logged in");
 				}
 				//#login
 				else if (info.length == 3){
 					clientUI.display("logging in");
-					openConnection();
+					obsClient.openConnection();
 					username = info[1];
 					password = info[2];
 					System.out.println("#login " + username + " " + password);
 					//resend the login information
-					sendToServer("#login " + username + " " + password);
+					obsClient.sendToServer("#login " + username + " " + password);
 				} 
 				else
 					clientUI.display("You must specify a username and password." +
@@ -176,7 +185,7 @@ public class ChatClient extends ObservableClient
 			catch(IOException e) {
 				clientUI.display("Unable to establish a" +
 				" connection to the host " +
-				getHost() + " on port " + getPort());
+				obsClient.getHost() + " on port " + obsClient.getPort());
 			}
 			
 		}
@@ -187,7 +196,7 @@ public class ChatClient extends ObservableClient
 			if (command.length() > 13)
 			{
 				try{
-					sendToServer(command);
+					obsClient.sendToServer(command);
 					password = command.substring(command.indexOf(" "), command.length());
 					clientUI.display("Password changed");
 				}
@@ -199,21 +208,21 @@ public class ChatClient extends ObservableClient
 		
 		//gethost command
 		else if(commandtemp.equals("#gethost"))
-			clientUI.display("" + getHost());
+			clientUI.display("" + obsClient.getHost());
 		//getport command
 		else if(commandtemp.equals("#getport"))
-			clientUI.display("" + getPort());
+			clientUI.display("" + obsClient.getPort());
 		//sethost command
 		//note the space after sethost, this ensures that a host is
 		//specified
 		else if(commandtemp.equals("#sethost")){
 			//cannot sethost if already logged on
-			if(isConnected()){
+			if(obsClient.isConnected()){
 				clientUI.display("You must be logged off to do that");
 			}
 			else if (command.length() > 9){
 				String tempHost = command.substring(9, command.length());
-				setHost(tempHost);
+				obsClient.setHost(tempHost);
 				clientUI.display("Host set to " + tempHost);
 			}
 			else
@@ -222,7 +231,7 @@ public class ChatClient extends ObservableClient
 		//setport commmand note space after command
 		else if(commandtemp.equals("#setport")){
 			//cannot set port if connected
-			if(isConnected()){
+			if(obsClient.isConnected()){
 				clientUI.display("You must be logged off to do that");
 			}
 			else if (command.length() > 9){
@@ -230,7 +239,7 @@ public class ChatClient extends ObservableClient
 				//Try/catch to ensure that only numbers are set as ports
 				try
 				{
-					setPort(Integer.parseInt(tempPort));
+					obsClient.setPort(Integer.parseInt(tempPort));
 					clientUI.display("Port set to " + tempPort);
 				}
 				catch(NumberFormatException e){
@@ -244,7 +253,7 @@ public class ChatClient extends ObservableClient
 		//check for private message command
 		//first implementation on 4/15 by seth schwiethale
 		else if(commandtemp.equals("#private")){
-			if(!isConnected()){
+			if(!obsClient.isConnected()){
 				clientUI.display("You must be logged on to do that");
 			}
 			else{
@@ -260,13 +269,13 @@ public class ChatClient extends ObservableClient
 				|| commandtemp.equals("#forward") || commandtemp.equals("#channel")
 				|| commandtemp.equals("#createchannel") || commandtemp.equals("#joinchannel"))
 		{
-			if(!isConnected()){
+			if(!obsClient.isConnected()){
 				clientUI.display("You must be logged on to do that");
 			}
 			else{
 				try
 				{
-					sendToServer(command);
+					obsClient.sendToServer(command);
 				}
 				catch(IOException e){
 					clientUI.display("Unable to send message to server.");
@@ -375,12 +384,12 @@ public class ChatClient extends ObservableClient
 		StringTokenizer verify = new StringTokenizer(command);
 		if (verify.countTokens()>=3){
 			try{
-				sendToServer(command);
+				obsClient.sendToServer(command);
 			}
 			catch(IOException e){
 				clientUI.display("Unable to establish a" +
 					" connection to the host " +
-					getHost() + " on port " + getPort());	
+					obsClient.getHost() + " on port " + obsClient.getPort());	
 			}
 		}
 		else clientUI.display("usage: #private <to user id> <message>");
@@ -391,7 +400,7 @@ public class ChatClient extends ObservableClient
 	* This method is called after the connection has been closed.
 	*/
 	public void connectionClosed() {
-		clientUI.display("Connection to " + getHost() + " closed.");
+		clientUI.display("Connection to " + obsClient.getHost() + " closed.");
 	}
 	/**
 	* This method is called each time an exception is thrown by the client's
@@ -400,13 +409,14 @@ public class ChatClient extends ObservableClient
 	* @param exception the exception raised
 	*/
 	public void connectionException(Exception exception) {
-		clientUI.display("Connection to " + getHost() + " lost.");
+		clientUI.display("Connection to " + obsClient.getHost() + " lost.");
 	}
 	/**
 	* This method is called after a connection has been established.
 	*/
 	public void connectionEstablished() {
-		clientUI.display("Welcome! You are connected to "+ getHost());
+		clientUI.display("Welcome! You are connected to "+ obsClient.getHost());
 	}
+
 }
 //End of ChatClient class
