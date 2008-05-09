@@ -128,9 +128,11 @@ public class ChatClient extends ObservableClient
 	* @param command The command to process
 	*/
 	public void clientCommand(String command){
-		//temp variable for comparison while ignoring case
-		String commandtemp = command.toLowerCase().trim();
 		
+		//trim off leading and following spaces
+		command = command.trim();
+		//temp variable for comparison while ignoring case
+		String commandtemp = command.toLowerCase().substring(0, command.indexOf(" "));
 		
 		//the quit command
 		if(commandtemp.equals("#quit")){
@@ -147,43 +149,34 @@ public class ChatClient extends ObservableClient
 		//the login command
 		else if(commandtemp.equals("#login")){
 			//cannot login if you are already logged on
-			if(isConnected()){
-				clientUI.display("Already logged in");
-			}
-			else{
-				clientUI.display("logging in");
-				try
-				{
+			
+			try{
+				if(isConnected()){
+					clientUI.display("Already logged in");
+				}
+				//#login by itself
+				else if (command.length() < 8){
+					clientUI.display("logging in");
 					openConnection();
 					//resend the login information
 					sendToServer("#login " + username + " " + password);
+					
 				}
-				catch(IOException e) {
-					clientUI.display("Unable to establish a" +
-					" connection to the host " +
-					getHost() + " on port " + getPort());
-				}
-			}
-		}
-		//the login command with username
-		else if(commandtemp.startsWith("#login ")){
-			//cannot login if already logged on
-			if(isConnected()){
-				clientUI.display("You must be logged off to do that");
-			}
-			else{
-				try{
-				String newUsername = command.substring(7, command.length());
-				username = newUsername;
-				openConnection();
-				sendToServer("#login " + username + " " + password);
-				}
-				catch(IOException e){
-					clientUI.display("Unable to establish a" +
-						" connection to the host " +
-						getHost() + " on port " + getPort());	
+
+				//#login followed by other stuff
+				else{
+					String newUsername = command.substring(7, command.length());
+					username = newUsername;
+					openConnection();
+					sendToServer("#login " + username + " " + password);
 				}
 			}
+			catch(IOException e) {
+				clientUI.display("Unable to establish a" +
+				" connection to the host " +
+				getHost() + " on port " + getPort());
+			}
+			
 		}
 		
 		//gethost command
@@ -195,24 +188,26 @@ public class ChatClient extends ObservableClient
 		//sethost command
 		//note the space after sethost, this ensures that a host is
 		//specified
-		else if(commandtemp.startsWith("#sethost ")){
+		else if(commandtemp.equals("#sethost")){
 			//cannot sethost if already logged on
 			if(isConnected()){
 				clientUI.display("You must be logged off to do that");
 			}
-			else{
+			else if (command.length() > 9){
 				String tempHost = command.substring(9, command.length());
 				setHost(tempHost);
 				clientUI.display("Host set to " + tempHost);
 			}
+			else
+				clientUI.display("A host must be specified!");
 		}
 		//setport commmand note space after command
-		else if(commandtemp.startsWith("#setport ")){
+		else if(commandtemp.equals("#setport")){
 			//cannot set port if connected
 			if(isConnected()){
 				clientUI.display("You must be logged off to do that");
 			}
-			else{
+			else if (command.length() > 9){
 				String tempPort = command.substring(9, command.length());
 				//Try/catch to ensure that only numbers are set as ports
 				try
@@ -224,11 +219,13 @@ public class ChatClient extends ObservableClient
 					clientUI.display("Port must be a number");
 				}
 			}
+			else
+				clientUI.display("A port must be specified!");
 		}
 
 		//check for private message command
 		//first implementation on 4/15 by seth schwiethale
-		else if(commandtemp.startsWith("#private ")){
+		else if(commandtemp.equals("#private")){
 			if(!isConnected()){
 				clientUI.display("You must be logged on to do that");
 			}
@@ -239,11 +236,11 @@ public class ChatClient extends ObservableClient
 		
 		//easier command view
 		//added 5/1/08 by James Crosetto
-		else if (commandtemp.startsWith("#setpassword ") || commandtemp.equals("#whoblocksme")
-				|| commandtemp.equals("#whoiblock") || commandtemp.startsWith("#unblock")
-				|| commandtemp.startsWith("#block ") || commandtemp.startsWith("#unforward")
-				|| commandtemp.startsWith("#forward ") || commandtemp.equals("#channel")
-				|| commandtemp.startsWith("#createchannel ") || commandtemp.startsWith("#joinchannel ")
+		else if (commandtemp.equals("#setpassword") || commandtemp.equals("#whoblocksme")
+				|| commandtemp.equals("#whoiblock") || commandtemp.equals("#unblock")
+				|| commandtemp.equals("#block") || commandtemp.equals("#unforward")
+				|| commandtemp.equals("#forward") || commandtemp.equals("#channel")
+				|| commandtemp.equals("#createchannel") || commandtemp.equals("#joinchannel")
 				|| commandtemp.equals("#channellist"))
 		{
 			if(!isConnected()){
@@ -262,14 +259,14 @@ public class ChatClient extends ObservableClient
 		
 		//give the user help with the commands
 		//Added on 4/20 by Cory
-		else if(commandtemp.startsWith("#help")){
-			commandHelp(command);
+		else if(commandtemp.equals("#help")){
+			commandHelp(commandtemp);
 		}
 
 		//catch anything that starts with #, but isn't a command
 		else{
 			clientUI.display("Invalid command");
-			clientUI.display("Please use #help for command help");
+			clientUI.display("Please use #help [command] for command help");
 		}
 		
 	}
@@ -280,7 +277,8 @@ public class ChatClient extends ObservableClient
 	 * @param command The command that contains the requested help
 	 */
 	private void commandHelp(String command){
-		if (command.equalsIgnoreCase("#help")){
+		command = command.toLowerCase();
+		if (command.equals("#help")){
 			clientUI.display("Commands\tdescription");
 			clientUI.display("#quit\t\texit client program");
 			clientUI.display("#logoff\tdisconnect from server");
@@ -299,49 +297,49 @@ public class ChatClient extends ObservableClient
 			clientUI.display("#setpassword\tchanges password");
 			clientUI.display("#help\t\tthis menu");
 		}
-		else if(command.equalsIgnoreCase("#help #quit")){
+		else if(command.equals("#help #quit")){
 			clientUI.display("Usage:\t#quit");
 		}
-		else if(command.equalsIgnoreCase("#help #logoff")){
+		else if(command.equals("#help #logoff")){
 			clientUI.display("Usage:\t#logoff");
 		}
-		else if(command.equalsIgnoreCase("#help #login")){
+		else if(command.equals("#help #login")){
 			clientUI.display("Usage:\t#login");
 		}
-		else if(command.equalsIgnoreCase("#help #gethost")){
+		else if(command.equals("#help #gethost")){
 			clientUI.display("Usage:\t#gethost");
 		}
-		else if(command.equalsIgnoreCase("#help #getport")){
+		else if(command.equals("#help #getport")){
 			clientUI.display("Usage:\t#getport");
 		}
-		else if(command.equalsIgnoreCase("#help #sethost")){
+		else if(command.equals("#help #sethost")){
 			clientUI.display("Usage:\t#sethost <hostname>");
 		}
-		else if(command.equalsIgnoreCase("#help #setport")){
+		else if(command.equals("#help #setport")){
 			clientUI.display("Usage:\t#setport <portname>");
 		}
-		else if(command.equalsIgnoreCase("#help #private")){
+		else if(command.equals("#help #private")){
 			clientUI.display("Usage:\t#private <to username> <message>");
 		}
-		else if(command.equalsIgnoreCase("#help #joinchannel")){
+		else if(command.equals("#help #joinchannel")){
 			clientUI.display("Usage:\t#joinchannel <channelName> [password]");
 		}
-		else if(command.equalsIgnoreCase("#help #createchannel")){
+		else if(command.equals("#help #createchannel")){
 			clientUI.display("Usage:\t#createchannel <channelName> [password]");
 		}
-		else if(command.equalsIgnoreCase("#help #channel")){
+		else if(command.equals("#help #channel")){
 			clientUI.display("Usage:\t#channel");
 		}
-		else if(command.equalsIgnoreCase("#help #channellist")){
+		else if(command.equals("#help #channellist")){
 			clientUI.display("Usage:\t#channellist");
 		}
-		else if(command.equalsIgnoreCase("#help #forward")){
+		else if(command.equals("#help #forward")){
 			clientUI.display("Usage:\t#forward <to username>");
 		}
-		else if(command.equalsIgnoreCase("#help #block")){
+		else if(command.equals("#help #block")){
 			clientUI.display("Usage:\t#block <username>");
 		}
-		else if(command.equalsIgnoreCase("#help #setpassword")){
+		else if(command.equals("#help #setpassword")){
 			clientUI.display("Usage:\t#setpassword <password>");
 		}
 	
