@@ -132,7 +132,12 @@ public class ChatClient extends ObservableClient
 		//trim off leading and following spaces
 		command = command.trim();
 		//temp variable for comparison while ignoring case
-		String commandtemp = command.toLowerCase().substring(0, command.indexOf(" "));
+		String commandtemp;
+		int index = command.indexOf(" ");
+		if (index != -1)
+			commandtemp = command.substring(0, index).toLowerCase();
+		else
+			commandtemp = command.toLowerCase();
 		
 		//the quit command
 		if(commandtemp.equals("#quit")){
@@ -149,27 +154,24 @@ public class ChatClient extends ObservableClient
 		//the login command
 		else if(commandtemp.equals("#login")){
 			//cannot login if you are already logged on
-			
+			String[] info = command.split(" ");
 			try{
 				if(isConnected()){
 					clientUI.display("Already logged in");
 				}
-				//#login by itself
-				else if (command.length() < 8){
+				//#login
+				else if (info.length == 3){
 					clientUI.display("logging in");
 					openConnection();
+					username = info[1];
+					password = info[2];
+					System.out.println("#login " + username + " " + password);
 					//resend the login information
 					sendToServer("#login " + username + " " + password);
-					
-				}
-
-				//#login followed by other stuff
-				else{
-					String newUsername = command.substring(7, command.length());
-					username = newUsername;
-					openConnection();
-					sendToServer("#login " + username + " " + password);
-				}
+				} 
+				else
+					clientUI.display("You must specify a username and password." +
+							"Make sure only one space is between words.");
 			}
 			catch(IOException e) {
 				clientUI.display("Unable to establish a" +
@@ -177,6 +179,22 @@ public class ChatClient extends ObservableClient
 				getHost() + " on port " + getPort());
 			}
 			
+		}
+		
+		//setpassword command
+		else if(commandtemp.equals("#setpassword"))
+		{
+			if (command.length() > 13)
+			{
+				try{
+					sendToServer(command);
+					password = command.substring(command.indexOf(" "), command.length());
+					clientUI.display("Password changed");
+				}
+				catch(Exception e){}
+			}
+			else
+				clientUI.display("A new password must be specified");
 		}
 		
 		//gethost command
@@ -236,12 +254,11 @@ public class ChatClient extends ObservableClient
 		
 		//easier command view
 		//added 5/1/08 by James Crosetto
-		else if (commandtemp.equals("#setpassword") || commandtemp.equals("#whoblocksme")
+		else if (commandtemp.equals("#whoblocksme") || commandtemp.equals("#channellist")
 				|| commandtemp.equals("#whoiblock") || commandtemp.equals("#unblock")
 				|| commandtemp.equals("#block") || commandtemp.equals("#unforward")
 				|| commandtemp.equals("#forward") || commandtemp.equals("#channel")
-				|| commandtemp.equals("#createchannel") || commandtemp.equals("#joinchannel")
-				|| commandtemp.equals("#channellist"))
+				|| commandtemp.equals("#createchannel") || commandtemp.equals("#joinchannel"))
 		{
 			if(!isConnected()){
 				clientUI.display("You must be logged on to do that");

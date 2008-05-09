@@ -25,7 +25,7 @@ import java.util.*;
  *
  * @version March 2008
  */
-public class EchoServer extends ObservableServer
+public class EchoServer extends AbstractServer
 {
 	//Class variables *************************************************
 
@@ -83,26 +83,34 @@ public class EchoServer extends ObservableServer
 	{
 		//convert object to string	
 		String tempMsg = msg.toString();
+		
+		String command;
+		int index = tempMsg.indexOf(" ");
+		if (index != -1)
+			command = tempMsg.substring(0, index).toLowerCase();
+		else
+			command = tempMsg.toLowerCase();
+		
 		//if the username is null and the message receiving is not a login message
-		if(!tempMsg.startsWith("#login ") && client.getInfo("username")== null){
+		if(!command.equals("#login") && client.getInfo("username")== null){
 			try{
 				client.sendToClient("Username must be specified");
 				client.close();
 			}
 			catch(IOException e){}
 		}
-		else if(tempMsg.startsWith("#login ")){
+		else if(command.equals("#login")){
 			handleLogin(tempMsg, client);
 
 		}
 		//check for private message not to be sent to all clients
 		//added 4/15 by seth
-		else if(tempMsg.startsWith("#private ")){
+		else if(command.equals("#private")){
 			sendPrvtMsg(tempMsg, client);
 		}
 		//join channel
 		//added 5/1/08 by James Crosetto
-		else if(tempMsg.startsWith("#joinchannel ")){
+		else if(command.equals("#joinchannel")){
 			try{
 				if (tempMsg.length() > 13)
 					joinChannel(tempMsg.substring(13,tempMsg.length()), client);
@@ -115,7 +123,7 @@ public class EchoServer extends ObservableServer
 		}
 		//create channel
 		//added 5/1/08 by James Crosetto
-		else if(tempMsg.startsWith("#createchannel ")){
+		else if(command.equals("#createchannel")){
 			try{
 				if (tempMsg.length() > 15)
 					createChannel(tempMsg.substring(15,tempMsg.length()), client);
@@ -129,7 +137,7 @@ public class EchoServer extends ObservableServer
 		//change channel
 		//first implementation 4/16 by james crosetto
 		//modified 5/1/08 by James Crosetto
-		else if(tempMsg.equals("#channel")){
+		else if(command.equals("#channel")){
 			try{
 				client.sendToClient("You are currently connected to channel: " + 
 						client.getInfo("channel"));
@@ -139,7 +147,7 @@ public class EchoServer extends ObservableServer
 		}
 		//display a sorted list of channels to the user
 		//added 5/8/08 by James Crosetto
-		else if(tempMsg.equals("#channellist")){
+		else if(command.equals("#channellist")){
 			try{
 				String[] chanlist = getChannels(client);
 				Arrays.sort(chanlist);
@@ -154,39 +162,44 @@ public class EchoServer extends ObservableServer
 			catch(IOException e){}
 
 		}
+		else if(command.equals("#setpassword"))
+		{
+			String pass = tempMsg.substring(tempMsg.indexOf(" ")+1, tempMsg.length());
+			setPassword(client, pass.trim());
+		}
 		//forward messages
 		//added 4/16 by Cory Stevens
-		else if(tempMsg.startsWith("#forward ")){
+		else if(command.equals("#forward")){
 			forwardingSetup(tempMsg, client);
 
 		}
 		//block users
 		//added 4/19 by Cory Stevens
-		else if(tempMsg.startsWith("#block ")){
+		else if(command.equals("#block")){
 			blockUser(tempMsg, client);
 
 		}
 		//unblock users
 		//added 4/19 by Cory Stevens
-		else if(tempMsg.startsWith("#unblock")){
+		else if(command.equals("#unblock")){
 			unblockUser(tempMsg, client);
 
 		}
 		//unblock users
 		//added 4/19 by Cory Stevens
-		else if(tempMsg.startsWith("#whoiblock")){
+		else if(command.equals("#whoiblock")){
 			whoIBlock(client);
 
 		}
 		//unblock users
 		//added 4/19 by Cory Stevens
-		else if(tempMsg.startsWith("#whoblocksme")){
+		else if(command.equals("#whoblocksme")){
 			whoBlocksMe(client);
 
 		}
 		//remove forwarding to users
 		//added 4/20 by James Crosetto
-		else if(tempMsg.startsWith("#unforward")){
+		else if(command.equals("#unforward")){
 			unforwardUser(tempMsg, client);
 
 		}
@@ -227,9 +240,9 @@ public class EchoServer extends ObservableServer
 			}
 			//client is not a new user
 			else{
-				String tempPassword = userInfo.get(username);
+				String tempPassword = (String)userInfo.get(username);
 				//compare stored password to connecting users password
-				if(tempPassword.equals(password)){
+				if(password.equals(tempPassword)){
 					try{
 						client.sendToClient("Welcome back " + username);
 						setClientUsername(username, client);
@@ -272,12 +285,27 @@ public class EchoServer extends ObservableServer
 		}
 
 	}
+	
+	/**
+	 * Method to change a users password
+	 * Added 5/8
+	 * @param client The client requesting the new password
+	 * @param password The new users password
+	 * @author james crosetto
+	 */
+	private void setPassword(ConnectionToClient client, String password){
+
+		client.setInfo("password", password);
+		userInfo.put((String)client.getInfo("username"), password);
+		outputUserInfo();
+
+	}
 
 	/**
 	 * Method to add a new user into the hashmap
 	 * Added 4/15
 	 * @param username The new users username
-	 * @param passowrd The new users password
+	 * @param password The new users password
 	 * @author cory stevens
 	 */
 	private void addNewUser(String username, String password){
