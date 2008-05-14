@@ -1259,13 +1259,24 @@ public class EchoServer implements Observer
 	 */
 	public void serverCommand(String command){
 		//Quit command
-		if(command.equalsIgnoreCase("#quit")){
+		
+		//trim off leading and following spaces
+		command = command.trim();
+		//temp variable for comparison while ignoring case
+		String commandtemp;
+		int index = command.indexOf(" ");
+		if (index != -1)
+			commandtemp = command.substring(0, index).toLowerCase();
+		else
+			commandtemp = command.toLowerCase();
+		
+		if(commandtemp.equals("#quit")){
 			serverUI.display("Server is quitting");
 			obsOrigServ.sendToAllClients("Server is quitting");
 			quit();
 		}
 		//Stop command
-		else if(command.equalsIgnoreCase("#stop")){
+		else if(commandtemp.equals("#stop")){
 			if(!obsOrigServ.isListening())
 				serverUI.display("Server is already stopped");
 			else{
@@ -1274,7 +1285,7 @@ public class EchoServer implements Observer
 			}
 		}
 		//close command
-		else if(command.equalsIgnoreCase("#close")){
+		else if(commandtemp.equals("#close")){
 			try
 			{
 				serverUI.display("Server is closing");
@@ -1285,7 +1296,7 @@ public class EchoServer implements Observer
 			catch(IOException e) {}
 		}
 		//setport command
-		else if(command.startsWith("#setport ")){
+		else if(commandtemp.equals("#setport")){
 			if(!isClosed){
 				serverUI.display("The server must be closed" +
 				" to change the port");
@@ -1297,7 +1308,7 @@ public class EchoServer implements Observer
 			}
 		}
 		//start command
-		else if(command.startsWith("#start")){
+		else if(commandtemp.equals("#start")){
 			if(obsOrigServ.isListening())
 				serverUI.display("Server is already running");
 			else{
@@ -1310,18 +1321,18 @@ public class EchoServer implements Observer
 			}
 		}
 		//getport command
-		else if(command.equalsIgnoreCase("#getport")){
+		else if(commandtemp.equals("#getport")){
 			serverUI.display("The current port is " + obsOrigServ.getPort());
 		}
 		//catch all other commands
 		//check for private message command
 		//first implementation on 4/15 by seth schwiethale
-		else if(command.startsWith("#private")){
+		else if(commandtemp.equals("#private")){
 			serverPM(command);
 		}
 		//send message to specified channel
 		//first implementation 4/16/08 by james crosetto
-		else if(command.startsWith("#channel ")){
+		else if(commandtemp.equals("#channel")){
 			try{
 				//find end of channel name
 				int space = command.indexOf(" ", 9);
@@ -1333,15 +1344,15 @@ public class EchoServer implements Observer
 				serverUI.display("Usage: #channel <channel> <message>");
 			}
 		}
-		else if(command.startsWith("#outputUsers")){
+		else if(commandtemp.equals("#outputusers")){
 			outputUserInfo();
 		}
-		else if(command.startsWith("#inputUsers")){
+		else if(commandtemp.equals("#inputusers")){
 			inputUserInfo();
 		}
 		//give the user help with the commands
 		//Added on 4/20 by Cory
-		else if(command.startsWith("#help ")){
+		else if(commandtemp.equals("#help")){
 			commandHelp(command);
 		}
 		else{
