@@ -61,6 +61,8 @@ public class EchoServer implements Observer
 	/**
 	 * Constructs an instance of the echo server.
 	 *
+	 * Observer Layer added 5/9/08
+	 * 
 	 * @param serverUI The interface type variable
 	 * @param newOoS The ObservableOriginatorServer instantiated in ServerConsole
 	 */
@@ -80,8 +82,10 @@ public class EchoServer implements Observer
 	//Instance methods ************************************************
 
 	/**
-	 * This method handles any messages received from the client.
+	 * This method handles any messages received from the ObservableServer.
 	 *
+	 * Observer Layer implemented 5/9/08
+	 * 
 	 * @param o is Observable
 	 * @param msg The message received from the client.
 	 */
@@ -98,8 +102,9 @@ public class EchoServer implements Observer
 			return;
 		}
 		
-		//otherwise msg was send form server and client is not null
+		//otherwise msg was sent from a client has a ConnectionToClient associated
 		ConnectionToClient client = origMsg.getOriginator();
+		
 		//command will determine which method will handle msg
 		String command;
 		int index = tempMsg.indexOf(" ");
@@ -243,7 +248,7 @@ public class EchoServer implements Observer
 		String username = "";
 		String[] parsedString = msg.split(" ");
 		password = parsedString[2];
-		username = parsedString[1];
+		username = parsedString[1].toLowerCase();	//all user names are stored in lowercase
 		//if the username is null and the message receiving is a login message
 		if(client.getInfo("username")== null){
 			//check if client is a new user
@@ -1138,6 +1143,53 @@ public class EchoServer implements Observer
 	 */
 	private void commandHelp(String command){
 
+		command = command.toLowerCase();
+		if (command.equals("#help")){
+			serverUI.display("Commands\tdescription");
+			serverUI.display("#quit\t\texit server program");
+			serverUI.display("#stop\t\tserver stops listening for connections");
+			serverUI.display("#close\t\tserver stops listening and closes socket");
+			serverUI.display("#setport\tsets port number to listen on");
+			serverUI.display("#start\t\tstarts listening");
+			serverUI.display("#getport\treturns the current port server is listening to");
+			serverUI.display("#private\tsend private message to a specified user");
+			serverUI.display("#channel\tsend a message to all clients connected to a channel");
+			serverUI.display("#outputusers\twrites userInfo hashmap to textfile");
+			serverUI.display("#inputUsers\treads in userInfo text file into userInfo hashmap");
+			serverUI.display("#help\t\tthis menu");
+		}
+		else if(command.equals("#help #quit")){
+			serverUI.display("Usage:\t#quit");
+		}
+		else if(command.equals("#help #stop")){
+			serverUI.display("Usage:\t#stop");
+		}
+		else if(command.equals("#help #close")){
+			serverUI.display("Usage:\t#close");
+		}
+		else if(command.equals("#help #setport")){
+			serverUI.display("Usage:\t#setport <portname>");
+		}
+		else if(command.equals("#help #start")){
+			serverUI.display("Usage:\t#start");
+		}
+		else if(command.equals("#help #getport")){
+			serverUI.display("Usage:\t#getport");
+		}
+		else if(command.equals("#help #private")){
+			serverUI.display("Usage:\t#private <to username> <message>");
+		}
+		else if(command.equals("#help #channel")){
+			serverUI.display("Usage:\t#channel <channelname> <message>");
+		}
+		else if(command.equals("#help #outputusers")){
+			serverUI.display("Usage:\t#outputusers");
+		}
+		else if(command.equals("#help #inputusers")){
+			serverUI.display("Usage:\t#inputusers");
+		}
+		else
+			serverUI.display("invalid help topic (make sure there are no characters or spaces at the tail)");
 	}
 
 	/**
