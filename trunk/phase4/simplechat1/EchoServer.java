@@ -84,7 +84,7 @@ public class EchoServer implements Observer
 	/**
 	 * This method handles any messages received from the ObservableServer.
 	 *
-	 * Observer Layer implemented 5/9/08
+	 * Observer Layer implemented by Seth Schwiethale on 5/9/08
 	 * 
 	 * @param o is Observable
 	 * @param msg The message received from the client.
@@ -186,8 +186,10 @@ public class EchoServer implements Observer
 		}
 		else if(command.equals("#setpassword"))
 		{
-			String pass = tempMsg.substring(tempMsg.indexOf(" ")+1, tempMsg.length());
-			setPassword(client, pass.trim());
+			String[] pwds = tempMsg.split(" ");
+			String pass = pwds[2];
+			String old = pwds[1];
+			setPassword(client, old.trim() , pass.trim());
 		}
 		//forward messages
 		//added 4/16 by Cory Stevens
@@ -246,9 +248,10 @@ public class EchoServer implements Observer
 
 		String password = "";
 		String username = "";
-		String[] parsedString = msg.split(" ");
+		String[] parsedString = msg.split(" ");  //properly formatted login is <username> <password>
 		password = parsedString[2];
 		username = parsedString[1].toLowerCase();	//all user names are stored in lowercase
+		
 		//if the username is null and the message receiving is a login message
 		if(client.getInfo("username")== null){
 			//check if client is a new user
@@ -315,12 +318,21 @@ public class EchoServer implements Observer
 	 * @param client The client requesting the new password
 	 * @param password The new users password
 	 * @author james crosetto
+	 * modified by Seth Schwiethale 5/18/08 (get old password first)
 	 */
-	private void setPassword(ConnectionToClient client, String password){
+	private void setPassword(ConnectionToClient client, String old, String password){
 
-		client.setInfo("password", password);
-		userInfo.put((String)client.getInfo("username"), password);
-		outputUserInfo();
+		if (client.getInfo("passsword").equals(old)){
+			client.setInfo("password", password);
+			userInfo.put((String)client.getInfo("username"), password);
+			outputUserInfo();
+		}
+		else {
+			try{
+				client.sendToClient("Your old password did not match");
+			}
+			catch(IOException e){}
+		}
 
 	}
 
@@ -344,7 +356,7 @@ public class EchoServer implements Observer
 	 * 
 	 * @param tempMsg Contains the message and recipient's username
 	 * @param client The client sending the message
-	 * @author seth schwiethale
+	 * @author Seth Schwiethale
 	 * Modified 5/1 by James Crosetto
 	 */
 	@SuppressWarnings("unchecked")
@@ -356,12 +368,12 @@ public class EchoServer implements Observer
 		//get desired recipient and message from command
 		try{
 			msgData.nextToken();
-			String recipient = msgData.nextToken();
+			String recipient = msgData.nextToken().toLowerCase();
 			String shave = ("#private  "+recipient);
 			String toSend = tempMsg.substring(shave.length());
 
 			//do not allow user to pm themselves
-			if(client.getInfo("username").equals(recipient)){
+			if(((String) client.getInfo("username")).equalsIgnoreCase(recipient)){
 				client.sendToClient("You may not send private messages to yourself.");
 				return;
 			}
@@ -428,6 +440,7 @@ public class EchoServer implements Observer
 	 * @param client The client that is initiating the block
 	 * @author Cory Stevens
 	 * Modified 5/1 by James Crosetto
+	 * Modified 5/18 by Seth Schwiethale check case
 	 */
 	private void blockUser(String msg, ConnectionToClient client){
 		String recipient = "";
@@ -442,7 +455,7 @@ public class EchoServer implements Observer
 			}
 				
 				
-			recipient = parsedString[1];
+			recipient = parsedString[1].toLowerCase();
 			
 			//do not allow user to block himself/herself
 			if(client.getInfo("username").equals(recipient)){
@@ -525,6 +538,7 @@ public class EchoServer implements Observer
 	 * @param client The client that is unblocking the user
 	 * @author cory stevens
 	 * Modified 5/1 by James Crosetto
+	 * Modified 5/18 by Seth Schwiethale check case
 	 */
 	@SuppressWarnings("unchecked")
 	private void unblockUser(String msg, ConnectionToClient client){
@@ -542,20 +556,21 @@ public class EchoServer implements Observer
 		}
 		
 		blockedUsers = (ArrayList<String>)client.getInfo("blocking"); 
+		String userName = parsedString[1].toLowerCase();
 		//if the unblock has a user specified only removed one user
 		if(parsedString.length > 1){
-			if(!blockedUsers.contains(parsedString[1])){
+			if(!blockedUsers.contains(userName)){
 				try {
-					client.sendToClient("Messages from " + parsedString[1] + " were not blocked.");
+					client.sendToClient("Messages from " + userName + " were not blocked.");
 				} 
 				catch (IOException e) {}
 			}
 			else{
-				blocked = findClient(parsedString[1]);
-				blockedUsers.remove(parsedString[1]);
+				blocked = findClient(userName);
+				blockedUsers.remove(userName);
 				
 				try {
-					client.sendToClient("Messages from " + parsedString[1] + " will now be displayed.");
+					client.sendToClient("Messages from " + userName + " will now be displayed.");
 					if(blocked != null)
 						blocked.sendToClient("You are no longer blocked by " + client.getInfo("username"));
 				} 
@@ -896,6 +911,7 @@ public class EchoServer implements Observer
 	 * @param client The Client that is setting up the forwarding
 	 * @author cory stevens
 	 * Modified 5/2 by James Crosetto
+	 * Modified 5/18 by Seth Schwiethale check case
 	 */
 	@SuppressWarnings("unchecked")
 	private void forwardingSetup(String msg, ConnectionToClient client){
@@ -912,7 +928,7 @@ public class EchoServer implements Observer
 				return;
 			}
 			
-			recipient = parsedString[1];
+			recipient = parsedString[1].toLowerCase();
 			
 			//do not allow user to forward to themselves
 			if(client.getInfo("username").equals(recipient)){
@@ -1138,7 +1154,8 @@ public class EchoServer implements Observer
 
 	/**
 	 * Method that helps the User with the various commands.
-	 * Added 4/20 by Cory Stevens
+	 * Added 4/20 by Cory Stevens 
+	 * tediously filled out by Seth Schwiethale and Madison Mosley 5/15/08
 	 * @param command The command that contains the requested help
 	 */
 	private void commandHelp(String command){

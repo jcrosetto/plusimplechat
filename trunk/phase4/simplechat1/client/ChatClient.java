@@ -82,6 +82,9 @@ public class ChatClient implements Observer
 	/**
 	* This method handles all data that comes in from the server.
 	*
+	* Observable Layer implemented by Seth Schwiethale on 5/7/08
+	*
+	* @param o is Observable from Observer
 	* @param msg The message from the server.
 	*/
 	public void update(Observable o, Object msg)
