@@ -1,12 +1,16 @@
 /**
  * Group Name: The Little Caesars
  * Members: Cory Stevens, Sean Maloy, James Crosetto, Madison Mosley, Seth Schwiethale
- * Project Part: Simplechat Phase 2
+ * Project Part: Simplechat Final
  * Title: EchoServer
  * CS320 Spring 2008
- * April 21, 2008
+ * May 19, 2008
  * Java
- * Phase 3 of the Simplechat program
+ * Simplechat program
+ * EchoServer now implements the Observable Layer. It is an Observer of ObservableOriginatorServer
+ * EchoServer has an Instance of ObservableOriginatorServer and through AdaptableServer has
+ * access to the functionality of AbstractServer. EchoServer handles messages from clients and the 
+ * ServerUI, it has various methods to delegate execution of commands sent through these messages
  */
 
 import java.io.*;
