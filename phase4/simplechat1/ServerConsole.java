@@ -1,12 +1,12 @@
 /**
 * Group Name: The Little Caesars
 * Members: Cory Stevens, Sean Maloy, James Crosetto, Madison Mosley, Seth Schwiethale
-* Project Part: Simplechat Phase 2
+* Project Part: Simplechat Final
 * Title: ServerConsole
 * CS320 Spring 2008
-* April 21, 2008
+* May 19, 2008
 * Java
-* Phase 3 of the Simplechat program
+* Phase 4 of the Simplechat program
 * The console for EchoServer
 */
 

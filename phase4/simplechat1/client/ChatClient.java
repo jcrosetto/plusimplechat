@@ -1,13 +1,17 @@
 /**
-* Group Name: The Little Caesars
-* Members: Cory Stevens, Sean Maloy, James Crosetto, Madison Mosley, Seth Schwiethale
-* Project Part: Simplechat Phase 2
-* Title: ChatClient
-* CS320 Spring 2008
-* April 21, 2008
-* Java
-* Phase 3 of the Simplechat program
-*/
+ * Group Name: The Little Caesars
+ * Members: Cory Stevens, Sean Maloy, James Crosetto, Madison Mosley, Seth Schwiethale
+ * Project Part: Simplechat Final
+ * Title: EchoServer
+ * CS320 Spring 2008
+ * May 19, 2008
+ * Java
+ * Simplechat program
+ * ChatClient now implements the Observable Layer. It is an Observer of ObservableCleint
+ * EchoServer has an Instance of ObservableClient and through AdaptableClient has
+ * access to the functionality of AbstractClient. ChatClient handles messages from the server and the 
+ * ClientUI, it has various methods to delegate execution of commands sent through these messages
+ */
 package client;
 import com.lloseng.ocsf.client.*;
 //import ocsf.client.*;
