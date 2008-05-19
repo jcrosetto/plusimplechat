@@ -229,9 +229,9 @@ public class EchoServer implements Observer
 		}
 		//regular messages
 		else{
-			serverUI.display("Message received: " + msg + " from " 
+			serverUI.display("Message received: " + tempMsg + " from " 
 					+ client.getInfo("username"));
-			this.sendToAllClients(client.getInfo("username")+": "+msg, client);
+			this.sendToAllClients(client.getInfo("username")+": "+tempMsg, client);
 		}
 
 	}
