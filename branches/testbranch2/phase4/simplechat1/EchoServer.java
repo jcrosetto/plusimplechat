@@ -5,7 +5,7 @@
  * Title: EchoServer
  * CS320 Spring 2008
  * May 19, 2008
- * Java
+ * Java 6
  * Simplechat program
  * EchoServer now implements the Observable Layer. It is an Observer of ObservableOriginatorServer
  * EchoServer has an Instance of ObservableOriginatorServer and through AdaptableServer has
