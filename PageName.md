@@ -1,0 +1,1 @@
+&lt;wiki:gadget url="http://markmail.org/gadgets/markmailmini.xqy?l=google-web-toolkit"/&gt;
